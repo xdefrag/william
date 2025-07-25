@@ -1,16 +1,9 @@
----
-globs: Makefile,Dockerfile,*.md
-alwaysApply: false
----
 # Deployment & Operations
 
 ## Build & Deployment
 
 ### Local Development
 ```bash
-# Setup development environment
-make setup-dev
-
 # Run with hot reload
 make dev
 
@@ -23,107 +16,10 @@ make build
 
 ### Quality Checks
 ```bash
-# Full check pipeline
-make check  # Runs: check-imports, lint, test, build
-
-# Individual checks
+# Individual checks (no combined 'check' command)
 make lint           # golangci-lint
 make check-imports  # Validate dependencies
-make test-coverage  # Test with coverage report
-```
-
-### Docker Operations
-Build and deployment via [Dockerfile](mdc:Dockerfile):
-
-```bash
-# Build image
-make docker-build
-
-# Run container
-make docker-run
-```
-
-### Railway Deployment
-1. **Environment Setup**: Configure all required env vars in Railway dashboard
-2. **Auto Deploy**: Pushes to main branch trigger automatic deployment
-3. **Database**: Use Railway PostgreSQL addon
-4. **Migrations**: Run automatically via Railway build command
-
-## Environment Variables
-
-### Required Configuration
-Based on [internal/config/config.go](mdc:internal/config/config.go):
-
-```bash
-# Core secrets (REQUIRED)
-TG_BOT_TOKEN=your_telegram_bot_token
-OPENAI_API_KEY=your_openai_api_key
-PG_DSN=postgres://user:pass@host:port/db
-
-# Optional tuning
-OPENAI_MODEL=gpt-4o-mini      # Default model
-MAX_MSG_BUFFER=100            # Messages before auto-summarization
-CTX_MAX_TOKENS=2048          # Max tokens per request
-TZ=Europe/Belgrade           # Timezone for midnight processing
-```
-
-### Development vs Production
-- **Development**: Use `.env` file (not committed)
-- **Production**: Set via Railway environment variables
-- **Testing**: Use environment variable overrides in tests
-
-## Operational Monitoring
-
-### Key Metrics to Watch
-1. **Response Time**: < 2 sec for @william mentions (95th percentile)
-2. **OpenAI Costs**: Monitor token usage, stay ≤ $100/month
-3. **Database Performance**: Watch message ingestion rate
-4. **Error Rates**: GPT failures, Telegram API errors
-
-### Troubleshooting
-
-#### Common Issues
-- **OpenAI API Limits**: Implement backoff and retry
-- **Database Connections**: Monitor pgx pool usage
-- **Memory Usage**: Watch message buffering and summarization
-- **Telegram Webhook**: Ensure proper long polling setup
-
-#### Log Analysis
-- Structured logging via Watermill logger
-- Error correlation with chat_id/user_id
-- GPT request/response tracking for cost analysis
-
-### Backup & Recovery
-- **Database**: Regular PostgreSQL backups via Railway
-- **Configuration**: Environment variables documented
-- **Code**: Git repository as source of truth
-# Deployment & Operations
-
-## Build & Deployment
-
-### Local Development
-```bash
-# Setup development environment
-make setup-dev
-
-# Run with hot reload
-make dev
-
-# Standard run
-make run
-
-# Build binary
-make build
-```
-
-### Quality Checks
-```bash
-# Full check pipeline
-make check  # Runs: check-imports, lint, test, build
-
-# Individual checks
-make lint           # golangci-lint
-make check-imports  # Validate dependencies
+make test           # Run tests
 make test-coverage  # Test with coverage report
 ```
 

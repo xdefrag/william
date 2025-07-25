@@ -1,6 +1,3 @@
----
-alwaysApply: true
----
 
 # William - Telegram Community Secretary Bot
 
@@ -33,44 +30,12 @@ William is a Telegram bot powered by ChatGPT (gpt-4o) that serves as a secretary
 ## Technology Stack
 - **Language**: Go 1.24+ (strict version compliance)
 - **Telegram**: Telego v1.2.0
-- **AI**: OpenAI GPT-4o (v1.8.2 - fixed version!)
+- **AI**: OpenAI GPT-4o (v1.11.1 - with Responses API support!)
 - **Database**: PostgreSQL 15 with pgx/v5
 - **Events**: Watermill for pub/sub architecture
 - **DI**: samber/do container
 - **Migrations**: goose v3
-# William - Telegram Community Secretary Bot
+- **Config**: TOML via pelletier/go-toml/v2
 
-## Project Overview
-William is a Telegram bot powered by ChatGPT (gpt-4o) that serves as a secretary for Telegram communities. It listens to all messages, creates context summaries, and provides intelligent responses when mentioned.
-
-## Architecture & Entry Points
-
-### Main Components
-- **Entry Point**: [cmd/william/main.go](mdc:cmd/william/main.go) - Application bootstrap with DI setup
-- **Bot Layer**: [internal/bot/](mdc:internal/bot/) - Telegram event handling and message processing
-- **Context Layer**: [internal/context/](mdc:internal/context/) - Message summarization and context building
-- **GPT Client**: [internal/gpt/client.go](mdc:internal/gpt/client.go) - OpenAI GPT-4o integration
-- **Database**: [internal/repo/repository.go](mdc:internal/repo/repository.go) - PostgreSQL operations
-- **Scheduler**: [internal/scheduler/scheduler.go](mdc:internal/scheduler/scheduler.go) - Midnight cron jobs
-- **Models**: [pkg/models/message.go](mdc:pkg/models/message.go) - Data structures
-
-### Key Files
-- **Configuration**: [internal/config/config.go](mdc:internal/config/config.go) - Environment variables and settings
-- **Dependencies**: [allowed-mods.txt](mdc:allowed-mods.txt) - Strict dependency control
-- **Database Schema**: [migrations/001_initial_schema.sql](mdc:migrations/001_initial_schema.sql) - PostgreSQL tables
-- **Build**: [Makefile](mdc:Makefile) - Development and deployment commands
-
-## Data Flow
-1. **Message Ingestion**: Telegram → `listener.go` → Database + Counter
-2. **Auto-Summarization**: N messages trigger → `summarizer.go` → GPT → Database
-3. **Mention Handling**: @william → `builder.go` → Context + GPT → Response
-4. **Midnight Reset**: Cron → Summarize all chats → Reset counters
-
-## Technology Stack
-- **Language**: Go 1.24+ (strict version compliance)
-- **Telegram**: Telego v1.2.0
-- **AI**: OpenAI GPT-4o (v1.8.2 - fixed version!)
-- **Database**: PostgreSQL 15 with pgx/v5
-- **Events**: Watermill for pub/sub architecture
 - **DI**: samber/do container
 - **Migrations**: goose v3
