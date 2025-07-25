@@ -1,0 +1,96 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: william_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: william
+      POSTGRES_USER: william
+      POSTGRES_PASSWORD: william_password
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U william -d william"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - william_network
+
+  # William Bot Service
+  william:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: william_bot
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Database connection
+      PG_DSN: postgres://william:william_password@postgres:5432/william?sslmode=disable
+      
+      # Required secrets (set these in .env file)
+      TG_BOT_TOKEN: ${TG_BOT_TOKEN}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      
+      # Optional overrides
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      MAX_MSG_BUFFER: ${MAX_MSG_BUFFER:-100}
+      CTX_MAX_TOKENS: ${CTX_MAX_TOKENS:-2048}
+      TZ: ${TZ:-Europe/Belgrade}
+      
+      # App config path
+      APP_CONFIG_PATH: /app/config/app.toml
+    volumes:
+      # Mount config directory
+      - ./config:/app/config:ro
+    networks:
+      - william_network
+    # Health check
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep william || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    # Add init container to wait for migrations
+    init: true
+
+  # Migration service (runs once and exits)
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: william_migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PG_DSN: postgres://william:william_password@postgres:5432/william?sslmode=disable
+    command: >
+      sh -c "
+        echo 'Running database migrations...' &&
+        goose -dir /app/migrations postgres \"$$PG_DSN\" up &&
+        echo 'Migrations completed successfully!'
+      "
+    networks:
+      - william_network
+    restart: "no"
+
+# Volumes
+volumes:
+  postgres_data:
+    driver: local
+
+# Networks
+networks:
+  william_network:
+    driver: bridge 

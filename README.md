@@ -4,222 +4,206 @@ William is a Telegram bot powered by ChatGPT (gpt-4o) that serves as a secretary
 
 ## Features
 
-- **Message Ingestion**: Listens to all messages in configured chats and stores them in PostgreSQL
-- **Smart Summarization**: Every N messages (default 100) and daily at 00:00, creates compressed context snapshots for chats and users
-- **Context-Aware Responses**: When mentioned (@william or reply), gathers relevant context and responds using ChatGPT
-- **Session Management**: Closes dialogues exactly at 00:00 and starts fresh sessions on next interaction
-- **Event-Driven Architecture**: Uses Watermill for event processing and message queuing
+- **Message Ingestion**: Automatically saves all messages to PostgreSQL database
+- **Auto-Summarization**: Triggers GPT summarization after N messages
+- **Context-Aware Responses**: Uses chat history and user profiles for intelligent replies
+- **Midnight Processing**: Daily summarization and counter reset
+- **TOML Configuration**: Centralized application settings
+
+## Quick Start with Docker Compose
+
+### Prerequisites
+
+- Docker and Docker Compose
+- Telegram Bot Token (get from [@BotFather](https://t.me/BotFather))
+- OpenAI API Key
+
+### Local Development Setup
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd william
+   ```
+
+2. **Configure environment variables**
+   ```bash
+   # Copy example environment file
+   cp docker-compose.env.example .env
+   
+   # Edit .env with your actual values
+   nano .env
+   ```
+
+3. **Start the services**
+   ```bash
+   # Build and start PostgreSQL + William bot
+   docker-compose up -d
+   
+   # Run database migrations
+   docker-compose run --rm migrate
+   
+   # Check logs
+   docker-compose logs -f william
+   ```
+
+4. **Stop the services**
+   ```bash
+   docker-compose down
+   ```
+
+### Environment Variables
+
+Required variables for `.env` file:
+
+```bash
+# Required
+TG_BOT_TOKEN=your_telegram_bot_token_here
+OPENAI_API_KEY=your_openai_api_key_here
+
+# Optional (with defaults)
+OPENAI_MODEL=gpt-4o-mini
+MAX_MSG_BUFFER=100
+CTX_MAX_TOKENS=2048
+TZ=Europe/Belgrade
+```
+
+### Docker Services
+
+- **postgres**: PostgreSQL 15 database with persistent storage
+- **william**: The bot application
+- **migrate**: One-time migration runner
+
+## Manual Development Setup
+
+### Prerequisites
+
+- Go 1.24+
+- PostgreSQL 15+
+- Required tools: `goose`, `golangci-lint`, `air` (optional)
+
+### Setup Commands
+
+```bash
+# Install development tools
+make setup-dev
+
+# Set up database
+export DB_URL="postgres://user:password@localhost/william?sslmode=disable"
+make migrate-up
+
+# Run application
+export TG_BOT_TOKEN="your_token"
+export OPENAI_API_KEY="your_key" 
+export PG_DSN="your_db_connection"
+make run
+
+# Development with hot reload
+make dev
+```
+
+## Configuration
+
+### TOML Configuration (`config/app.toml`)
+
+Application settings (non-secrets) are configured in TOML:
+
+```toml
+[app]
+name = "William"
+mention_username = "@william"
+
+[openai]
+model = "gpt-4o-mini"
+temperature = 0.7
+max_tokens_summarize = 2048
+
+[prompts]
+summarize_system = "You are a community secretary..."
+response_system = "You are William, the community secretary..."
+```
+
+### Environment Variables
+
+Secrets and deployment-specific settings:
+
+```bash
+# Required
+TG_BOT_TOKEN=your_telegram_bot_token
+OPENAI_API_KEY=your_openai_api_key
+PG_DSN=postgres://user:pass@host:port/db
+
+# Optional overrides
+OPENAI_MODEL=gpt-4           # Override TOML setting
+MAX_MSG_BUFFER=200           # Override TOML setting
+APP_CONFIG_PATH=config/app.toml  # Custom config path
+```
 
 ## Architecture
 
+### Components
+
+- **Bot Layer** (`internal/bot/`): Telegram event handling
+- **Context Layer** (`internal/context/`): Message summarization and context building
+- **GPT Client** (`internal/gpt/`): OpenAI GPT-4o integration
+- **Database** (`internal/repo/`): PostgreSQL operations
+- **Scheduler** (`internal/scheduler/`): Midnight cron jobs
+- **Configuration** (`internal/config/`): TOML + ENV configuration
+
+### Data Flow
+
+1. **Message Ingestion**: Telegram → `listener.go` → Database + Counter
+2. **Auto-Summarization**: N messages trigger → `summarizer.go` → GPT → Database
+3. **Mention Handling**: @william → `builder.go` → Context + GPT → Response
+4. **Midnight Reset**: Cron → Summarize all chats → Reset counters
+
+## Development
+
+### Available Commands
+
+```bash
+make help                 # Show all available commands
+make build               # Build the application
+make run                 # Run the application
+make test                # Run tests
+make test-coverage       # Run tests with coverage
+make lint                # Run linters
+make check-imports       # Check for unauthorized imports
+make check               # Run full check pipeline
+make migrate-up          # Run database migrations
+make migrate-create      # Create new migration
+make docker-build        # Build Docker image
+make docker-run          # Run Docker container
 ```
-cmd/
-└── william/          # Entry point
-internal/
-├── bot/              # Telegram event handling
-│   ├── listener.go   # Message ingestion
-│   ├── handlers.go   # Event handlers
-│   └── events.go     # Event definitions
-├── context/          # Context building and summarization
-│   ├── builder.go    # Context builder for responses
-│   └── summarizer.go # Message summarization
-├── gpt/              # OpenAI wrapper
-│   └── client.go     # GPT client
-├── repo/             # Database access layer
-│   └── repository.go # PostgreSQL operations
-├── scheduler/        # Cron jobs
-│   └── scheduler.go  # Midnight and N-message triggers
-└── config/           # Configuration
-    └── config.go     # Environment variables
-pkg/
-└── models/           # Data types
-    └── message.go    # Message, ChatSummary, UserSummary
+
+### Database Migrations
+
+```bash
+# Create new migration
+make migrate-create name=add_new_feature
+
+# Apply migrations
+make migrate-up
+
+# Check status
+make migrate-status
 ```
 
 ## Technology Stack
 
 - **Language**: Go 1.24+
-- **Telegram API**: Telego
-- **LLM**: OpenAI GPT-4o (via oai-go)
-- **Database**: PostgreSQL 15
-- **PaaS**: Railway
-- **Message Broker**: Watermill (in-process)
-- **Utilities**: samber/lo, samber/do (DI)
-- **Migrations**: goose
-- **Logging**: Watermill logger
+- **Database**: PostgreSQL 15 with pgx/v5 driver
+- **AI**: OpenAI GPT-4o (v1.8.2)
+- **Telegram**: Telego v1.2.0
+- **Events**: Watermill pub/sub
+- **DI**: samber/do container
+- **Configuration**: go-toml/v2
+- **Migrations**: goose v3
 
-## Database Schema
+## Dependencies
 
-```sql
--- Messages storage
-CREATE TABLE messages (
-  id              BIGSERIAL PRIMARY KEY,
-  telegram_msg_id BIGINT NOT NULL,
-  chat_id         BIGINT NOT NULL,
-  user_id         BIGINT NOT NULL,
-  text            TEXT,
-  created_at      TIMESTAMPTZ DEFAULT now()
-);
-
--- Chat snapshots
-CREATE TABLE chat_summaries (
-  id              BIGSERIAL PRIMARY KEY,
-  chat_id         BIGINT NOT NULL,
-  summary         TEXT NOT NULL,
-  topics_json     JSONB NOT NULL DEFAULT '{}',
-  next_events     TEXT,
-  created_at      TIMESTAMPTZ DEFAULT now()
-);
-
--- User snapshots
-CREATE TABLE user_summaries (
-  id              BIGSERIAL PRIMARY KEY,
-  chat_id         BIGINT NOT NULL,
-  user_id         BIGINT NOT NULL,
-  likes_json      JSONB NOT NULL DEFAULT '{}',
-  dislikes_json   JSONB NOT NULL DEFAULT '{}',
-  traits          TEXT,
-  created_at      TIMESTAMPTZ DEFAULT now()
-);
-```
-
-## Configuration
-
-Set the following environment variables:
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `TG_BOT_TOKEN` | - | Telegram bot token (required) |
-| `OPENAI_API_KEY` | - | OpenAI API key (required) |
-| `OPENAI_MODEL` | `gpt-4o-mini` | OpenAI model to use |
-| `MAX_MSG_BUFFER` | `100` | Message threshold for auto-summarization |
-| `CTX_MAX_TOKENS` | `2048` | Token limit for single request |
-| `PG_DSN` | - | PostgreSQL connection string (required) |
-| `TZ` | `Europe/Belgrade` | Timezone for midnight processing |
-
-## Development Setup
-
-1. **Install dependencies**:
-   ```bash
-   make setup-dev
-   ```
-
-2. **Set up environment**:
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
-
-3. **Run database migrations**:
-   ```bash
-   make migrate-up
-   ```
-
-4. **Start development server**:
-   ```bash
-   make dev  # Hot reload
-   # or
-   make run  # Standard run
-   ```
-
-## Available Commands
-
-```bash
-make help           # Show all available commands
-make build          # Build the application
-make run            # Run the application
-make test           # Run tests
-make test-coverage  # Run tests with coverage
-make lint           # Run linters
-make check-imports  # Check for unauthorized imports
-make migrate-up     # Run database migrations
-make migrate-down   # Rollback migrations
-make docker-build   # Build Docker image
-make docker-run     # Run in Docker
-make check          # Run all checks (lint, test, build)
-```
-
-## Deployment
-
-### Railway
-
-1. Connect your GitHub repository to Railway
-2. Set environment variables in Railway dashboard
-3. Railway will automatically deploy on push to main branch
-
-### Docker
-
-```bash
-# Build image
-make docker-build
-
-# Run container
-docker run --env-file .env william-bot
-```
-
-## Data Flow
-
-### Message Ingestion
-1. Telegram update → `listener.go`
-2. Save message to database + increment counter
-3. If counter ≥ `MAX_MSG_BUFFER` → trigger summarization
-
-### Summarization
-1. Fetch last N messages from chat
-2. Send to GPT-4o with summarization prompt
-3. Save chat summary and user profiles
-4. Reset message counter
-
-### Mention Handling
-1. Detect @william mention or reply to bot
-2. Build context: last chat summary + recent messages + user profile
-3. Send to GPT-4o with context-aware prompt
-4. Reply to user
-
-### Midnight Reset
-1. Cron job triggers at 00:00 (configured timezone)
-2. Summarize all active chats
-3. Reset all message counters
-4. Clear session state
-
-## API Cost Management
-
-- Middleware logs `prompt_tokens`/`completion_tokens`
-- In-memory cache for recent summaries (< 1h)
-- Weekly cost reporting available
-- Budget limit: ≤ $100/month
-
-## Dependency Management
-
-This project uses a **fixed set of dependencies** defined in `allowed-mods.txt`. Any new imports must be approved and added to this list. The CI checks enforce this restriction.
-
-## Testing
-
-```bash
-make test           # Unit tests
-make test-coverage  # Coverage report
-```
-
-Coverage types:
-- Unit tests: config parsing, repository methods, context building
-- Integration tests: Telegram webhook + PostgreSQL (test containers)
-- E2E tests: Mock OpenAI, simulated chats
-
-## Performance Targets
-
-| Metric | Target |
-|--------|--------|
-| Response time to mention | < 2 sec (95th percentile) |
-| Summary topic accuracy | ≥ 90% (manual sampling) |
-| LLM budget | ≤ $100/month |
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Run `make check` to ensure code quality
-4. Submit a pull request
+All dependencies are strictly controlled via `allowed-mods.txt`. See project rules for adding new dependencies.
 
 ## License
 
-This project is proprietary software developed for specific community management needs. 
+[Add your license here] 

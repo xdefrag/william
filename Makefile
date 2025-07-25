@@ -78,6 +78,46 @@ docker-run:
 	@echo "Running Docker container..."
 	docker run --rm --env-file .env $(DOCKER_IMAGE)
 
+# Docker Compose operations
+docker-compose-up:
+	@echo "Starting services with Docker Compose..."
+	docker-compose up -d
+
+docker-compose-logs:
+	@echo "Showing logs..."
+	docker-compose logs -f william
+
+docker-compose-down:
+	@echo "Stopping services..."
+	docker-compose down
+
+docker-compose-restart:
+	@echo "Restarting services..."
+	docker-compose restart william
+
+docker-compose-migrate:
+	@echo "Running database migrations..."
+	docker-compose run --rm migrate
+
+docker-compose-build:
+	@echo "Building services..."
+	docker-compose build
+
+docker-compose-dev:
+	@echo "Starting development environment..."
+	@if [ ! -f .env ]; then \
+		echo "Creating .env from example..."; \
+		cp docker-compose.env.example .env; \
+		echo "Please edit .env with your API keys!"; \
+		exit 1; \
+	fi
+	docker-compose up
+
+docker-compose-clean:
+	@echo "Cleaning up Docker Compose resources..."
+	docker-compose down -v --remove-orphans
+	docker-compose rm -f
+
 # Setup development environment
 setup-dev:
 	@echo "Setting up development environment..."
@@ -109,23 +149,43 @@ check: check-imports lint test build
 # Help
 help:
 	@echo "Available commands:"
+	@echo ""
+	@echo "Development:"
 	@echo "  build           Build the application"
 	@echo "  run             Run the application"
+	@echo "  dev             Start development mode with hot reload"
+	@echo "  setup-dev       Setup development environment"
+	@echo ""
+	@echo "Testing & Quality:"
 	@echo "  test            Run tests"
 	@echo "  test-coverage   Run tests with coverage"
-	@echo "  clean           Clean build artifacts"
 	@echo "  lint            Run linters"
 	@echo "  check-imports   Check for unauthorized imports"
-	@echo "  dev             Start development mode with hot reload"
+	@echo "  check           Run all checks (lint, test, build)"
+	@echo "  fmt             Format code"
+	@echo "  tidy            Run go mod tidy"
+	@echo ""
+	@echo "Database:"
 	@echo "  migrate-up      Run database migrations up"
 	@echo "  migrate-down    Run database migrations down"
 	@echo "  migrate-status  Show migration status"
 	@echo "  migrate-create  Create new migration (use name=migration_name)"
+	@echo ""
+	@echo "Docker (standalone):"
 	@echo "  docker-build    Build Docker image"
 	@echo "  docker-run      Run Docker container"
-	@echo "  setup-dev       Setup development environment"
+	@echo ""
+	@echo "Docker Compose (recommended for local development):"
+	@echo "  docker-compose-dev      Start development environment (creates .env if missing)"
+	@echo "  docker-compose-up       Start services in background"
+	@echo "  docker-compose-logs     Show service logs"
+	@echo "  docker-compose-down     Stop services"
+	@echo "  docker-compose-restart  Restart william service"
+	@echo "  docker-compose-migrate  Run database migrations"
+	@echo "  docker-compose-build    Rebuild services"
+	@echo "  docker-compose-clean    Clean up all resources"
+	@echo ""
+	@echo "Utilities:"
 	@echo "  verify-tools    Verify all required tools are installed"
-	@echo "  fmt             Format code"
-	@echo "  tidy            Run go mod tidy"
-	@echo "  check           Run all checks (lint, test, build)"
+	@echo "  clean           Clean build artifacts"
 	@echo "  help            Show this help" 

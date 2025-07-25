@@ -1,0 +1,25 @@
+# Development overrides for docker-compose.yml
+# This file is automatically loaded by docker-compose
+
+version: '3.8'
+
+services:
+  william:
+    # Enable development mode with volume mounting for live reload
+    volumes:
+      - ./config:/app/config:ro
+      - ./migrations:/app/migrations:ro
+    # Add development environment variables
+    environment:
+      - LOG_LEVEL=debug
+    # Keep container running even if app crashes for debugging
+    restart: "no"
+    
+  postgres:
+    # Expose postgres port for direct access during development
+    ports:
+      - "5432:5432"
+    # Enable logging for development
+    environment:
+      - POSTGRES_LOG_STATEMENT=all
+      - POSTGRES_LOG_MIN_DURATION_STATEMENT=0 

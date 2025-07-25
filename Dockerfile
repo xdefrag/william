@@ -36,6 +36,9 @@ COPY --from=builder /app/william .
 # Copy migrations
 COPY --from=builder /app/migrations ./migrations
 
+# Copy config directory
+COPY --from=builder /app/config ./config
+
 # Copy allowed modules list
 COPY --from=builder /app/allowed-mods.txt .
 
