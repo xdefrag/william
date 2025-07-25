@@ -44,7 +44,7 @@ services:
       
       # Optional overrides
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
-      MAX_MSG_BUFFER: ${MAX_MSG_BUFFER:-100}
+      MAX_MSG_BUFFER: ${MAX_MSG_BUFFER:-10}
       CTX_MAX_TOKENS: ${CTX_MAX_TOKENS:-2048}
       TZ: ${TZ:-Europe/Belgrade}
       

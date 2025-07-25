@@ -73,7 +73,9 @@ func (l *Listener) Start(ctx context.Context) error {
 		return fmt.Errorf("failed to start long polling: %w", err)
 	}
 
-	l.logger.Info("Bot listener started", nil)
+	l.logger.Info("Bot listener started", watermill.LogFields{
+		"max_msg_buffer": l.config.App.Limits.MaxMsgBuffer,
+	})
 
 	for {
 		select {
@@ -124,13 +126,26 @@ func (l *Listener) handleMessage(ctx context.Context, msg *telego.Message) {
 
 	// Increment message counter and check if we need to summarize
 	count := l.counters.Increment(msg.Chat.ID)
+	l.logger.Info("Message counter incremented", watermill.LogFields{
+		"chat_id": msg.Chat.ID,
+		"count":   count,
+		"limit":   l.config.App.Limits.MaxMsgBuffer,
+	})
+
 	if count >= l.config.App.Limits.MaxMsgBuffer {
 		// Reset counter and trigger summarization
 		l.counters.Reset(msg.Chat.ID)
+		l.logger.Info("Triggering summarization", watermill.LogFields{
+			"chat_id": msg.Chat.ID,
+		})
 
 		// Publish summarization event
 		if err := l.publishSummarizeEvent(ctx, msg.Chat.ID); err != nil {
 			l.logger.Error("Failed to publish summarize event", err, watermill.LogFields{
+				"chat_id": msg.Chat.ID,
+			})
+		} else {
+			l.logger.Info("Summarize event published successfully", watermill.LogFields{
 				"chat_id": msg.Chat.ID,
 			})
 		}
