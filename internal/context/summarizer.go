@@ -41,30 +41,54 @@ func (s *Summarizer) SummarizeChat(ctx context.Context, chatID int64, maxMessage
 	// Reverse messages to chronological order
 	lo.Reverse(messages)
 
-	// Call GPT for summarization
-	req := gpt.SummarizeRequest{
-		ChatID:   chatID,
-		Messages: messages,
+	// Get existing chat summary for cumulative updates
+	existingChatSummary, err := s.repo.GetLatestChatSummary(ctx, chatID)
+	if err != nil {
+		return fmt.Errorf("failed to get existing chat summary: %w", err)
 	}
 
-	response, err := s.gptClient.Summarize(ctx, req)
+	// Get existing user summaries for all users in the messages
+	userIDs := make([]int64, 0)
+	userIDSet := make(map[int64]bool)
+	for _, msg := range messages {
+		if !userIDSet[msg.UserID] {
+			userIDs = append(userIDs, msg.UserID)
+			userIDSet[msg.UserID] = true
+		}
+	}
+
+	existingUserSummaries := make(map[int64]*models.UserSummary)
+	for _, userID := range userIDs {
+		userSummary, err := s.repo.GetLatestUserSummary(ctx, chatID, userID)
+		if err != nil {
+			return fmt.Errorf("failed to get existing user summary for user %d: %w", userID, err)
+		}
+		if userSummary != nil {
+			existingUserSummaries[userID] = userSummary
+		}
+	}
+
+	// Call GPT for cumulative summarization
+	req := gpt.SummarizeRequest{
+		ChatID:                chatID,
+		Messages:              messages,
+		ExistingChatSummary:   existingChatSummary,
+		ExistingUserSummaries: existingUserSummaries,
+	}
+
+	response, err := s.gptClient.SummarizeCumulative(ctx, req)
 	if err != nil {
 		return fmt.Errorf("failed to summarize with GPT: %w", err)
 	}
 
 	now := time.Now()
 
-	// Save chat summary
+	// Save updated chat summary
 	chatSummary := &models.ChatSummary{
 		ChatID:     chatID,
 		Summary:    response.ChatSummary.Summary,
-		TopicsJSON: make(map[string]interface{}),
+		TopicsJSON: response.ChatSummary.Topics,
 		CreatedAt:  now,
-	}
-
-	// Convert topics to interface{}
-	for topic, count := range response.ChatSummary.Topics {
-		chatSummary.TopicsJSON[topic] = count
 	}
 
 	// Add next events if present
@@ -74,10 +98,10 @@ func (s *Summarizer) SummarizeChat(ctx context.Context, chatID int64, maxMessage
 
 	err = s.repo.SaveChatSummary(ctx, chatSummary)
 	if err != nil {
-		return fmt.Errorf("failed to save chat summary: %w", err)
+		return fmt.Errorf("failed to save updated chat summary: %w", err)
 	}
 
-	// Save user summaries
+	// Save updated user summaries
 	for userIDStr, profile := range response.UserProfiles {
 		userID, err := strconv.ParseInt(userIDStr, 10, 64)
 		if err != nil {
@@ -87,19 +111,9 @@ func (s *Summarizer) SummarizeChat(ctx context.Context, chatID int64, maxMessage
 		userSummary := &models.UserSummary{
 			ChatID:       chatID,
 			UserID:       userID,
-			LikesJSON:    make(map[string]interface{}),
-			DislikesJSON: make(map[string]interface{}),
+			LikesJSON:    profile.Likes,
+			DislikesJSON: profile.Dislikes,
 			CreatedAt:    now,
-		}
-
-		// Convert likes to interface{}
-		for topic, score := range profile.Likes {
-			userSummary.LikesJSON[topic] = score
-		}
-
-		// Convert dislikes to interface{}
-		for topic, score := range profile.Dislikes {
-			userSummary.DislikesJSON[topic] = score
 		}
 
 		// Add traits if present
@@ -109,7 +123,7 @@ func (s *Summarizer) SummarizeChat(ctx context.Context, chatID int64, maxMessage
 
 		err = s.repo.SaveUserSummary(ctx, userSummary)
 		if err != nil {
-			return fmt.Errorf("failed to save user summary for user %d: %w", userID, err)
+			return fmt.Errorf("failed to save updated user summary for user %d: %w", userID, err)
 		}
 	}
 

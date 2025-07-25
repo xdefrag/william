@@ -86,28 +86,20 @@ func (h *Handlers) HandleMentionEvent(msg *message.Message) error {
 
 	ctx := context.Background()
 
-	// Build context for response
-	contextReq, err := h.builder.BuildContextForResponse(ctx, event.ChatID, event.UserID, event.UserName)
+	// Extract user query and generate response
+	userQuery := h.extractUserQuery(event.Text)
+	response, responseID, err := h.generateResponse(ctx, event, userQuery)
 	if err != nil {
-		h.logger.Error("Failed to build context", err, watermill.LogFields{
-			"chat_id": event.ChatID,
-			"user_id": event.UserID,
-		})
 		return err
 	}
 
-	// Extract user query (remove @william mention)
-	userQuery := h.extractUserQuery(event.Text)
-	contextReq.UserQuery = userQuery
-
-	// Generate response
-	response, err := h.gptClient.GenerateResponse(ctx, *contextReq)
-	if err != nil {
-		h.logger.Error("Failed to generate response", err, watermill.LogFields{
-			"chat_id": event.ChatID,
-			"user_id": event.UserID,
+	// Always save new response ID - OpenAI knows best
+	if err := h.saveChatStateResponseID(ctx, event.ChatID, responseID); err != nil {
+		// Log but don't fail - we still want to send the response
+		h.logger.Error("Failed to save chat state", err, watermill.LogFields{
+			"chat_id":     event.ChatID,
+			"response_id": responseID,
 		})
-		return err
 	}
 
 	// Send response
@@ -120,11 +112,44 @@ func (h *Handlers) HandleMentionEvent(msg *message.Message) error {
 	}
 
 	h.logger.Info("Response sent successfully", watermill.LogFields{
-		"chat_id": event.ChatID,
-		"user_id": event.UserID,
+		"chat_id":     event.ChatID,
+		"user_id":     event.UserID,
+		"response_id": responseID,
 	})
 
 	return nil
+}
+
+// generateResponse builds context and generates GPT response
+func (h *Handlers) generateResponse(ctx context.Context, event MentionEvent, userQuery string) (response, responseID string, err error) {
+	// Build context for response
+	contextReq, err := h.builder.BuildContextForResponse(ctx, event.ChatID, event.UserID, event.UserName)
+	if err != nil {
+		h.logger.Error("Failed to build context", err, watermill.LogFields{
+			"chat_id": event.ChatID,
+			"user_id": event.UserID,
+		})
+		return "", "", err
+	}
+
+	contextReq.UserQuery = userQuery
+
+	// Let OpenAI Responses API handle everything - reuse, conversations, context
+	result, err := h.gptClient.GenerateResponse(ctx, *contextReq)
+	if err != nil {
+		h.logger.Error("Failed to generate response", err, watermill.LogFields{
+			"chat_id": event.ChatID,
+			"user_id": event.UserID,
+		})
+		return "", "", err
+	}
+
+	return result.Text, result.NewResponseID, nil
+}
+
+// saveChatStateResponseID saves response ID to chat state
+func (h *Handlers) saveChatStateResponseID(ctx context.Context, chatID int64, responseID string) error {
+	return h.repo.UpdateChatStateResponseID(ctx, chatID, responseID)
 }
 
 // HandleMidnightEvent handles midnight reset events

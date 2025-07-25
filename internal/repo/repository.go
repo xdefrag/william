@@ -113,6 +113,11 @@ func (r *Repository) SaveChatSummary(ctx context.Context, summary *models.ChatSu
 	query := `
 		INSERT INTO chat_summaries (chat_id, summary, topics_json, next_events, created_at)
 		VALUES ($1, $2, $3, $4, $5)
+		ON CONFLICT (chat_id) DO UPDATE SET
+			summary = EXCLUDED.summary,
+			topics_json = EXCLUDED.topics_json,
+			next_events = EXCLUDED.next_events,
+			created_at = EXCLUDED.created_at
 		RETURNING id`
 
 	topicsJSON, err := json.Marshal(summary.TopicsJSON)
@@ -157,6 +162,11 @@ func (r *Repository) SaveUserSummary(ctx context.Context, summary *models.UserSu
 	query := `
 		INSERT INTO user_summaries (chat_id, user_id, likes_json, dislikes_json, traits, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6)
+		ON CONFLICT (chat_id, user_id) DO UPDATE SET
+			likes_json = EXCLUDED.likes_json,
+			dislikes_json = EXCLUDED.dislikes_json,
+			traits = EXCLUDED.traits,
+			created_at = EXCLUDED.created_at
 		RETURNING id`
 
 	likesJSON, err := json.Marshal(summary.LikesJSON)
@@ -227,4 +237,60 @@ func (r *Repository) GetActiveChatIDs(ctx context.Context, since time.Time) ([]i
 	}
 
 	return chatIDs, rows.Err()
+}
+
+// Chat states operations for Responses API
+
+func (r *Repository) GetChatState(ctx context.Context, chatID int64) (*models.ChatState, error) {
+	query := `
+		SELECT chat_id, previous_response_id, last_interaction_at, created_at, updated_at
+		FROM chat_states 
+		WHERE chat_id = $1`
+
+	row := r.pool.QueryRow(ctx, query, chatID)
+
+	state := &models.ChatState{}
+	err := row.Scan(&state.ChatID, &state.PreviousResponseID, &state.LastInteractionAt, &state.CreatedAt, &state.UpdatedAt)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return state, nil
+}
+
+func (r *Repository) SaveChatState(ctx context.Context, state *models.ChatState) error {
+	query := `
+		INSERT INTO chat_states (chat_id, previous_response_id, last_interaction_at, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5)
+		ON CONFLICT (chat_id) DO UPDATE SET
+			previous_response_id = EXCLUDED.previous_response_id,
+			last_interaction_at = EXCLUDED.last_interaction_at,
+			updated_at = EXCLUDED.updated_at`
+
+	now := time.Now()
+	if state.CreatedAt.IsZero() {
+		state.CreatedAt = now
+	}
+	state.UpdatedAt = now
+	state.LastInteractionAt = now
+
+	_, err := r.pool.Exec(ctx, query, state.ChatID, state.PreviousResponseID, state.LastInteractionAt, state.CreatedAt, state.UpdatedAt)
+	return err
+}
+
+func (r *Repository) UpdateChatStateResponseID(ctx context.Context, chatID int64, responseID string) error {
+	query := `
+		INSERT INTO chat_states (chat_id, previous_response_id, last_interaction_at, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5)
+		ON CONFLICT (chat_id) DO UPDATE SET
+			previous_response_id = EXCLUDED.previous_response_id,
+			last_interaction_at = EXCLUDED.last_interaction_at,
+			updated_at = EXCLUDED.updated_at`
+
+	now := time.Now()
+	_, err := r.pool.Exec(ctx, query, chatID, responseID, now, now, now)
+	return err
 }
