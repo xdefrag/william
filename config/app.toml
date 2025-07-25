@@ -1,0 +1,55 @@
+# William Bot Application Configuration
+# This file contains non-secret application settings
+
+[app]
+name = "William"
+description = "Community Secretary Bot"
+mention_username = "@william"
+default_response = "Hello! How can I help you?"
+
+[openai]
+model = "gpt-4o-mini"
+temperature = 0.7
+max_tokens_summarize = 2048
+max_tokens_response = 1024
+
+[limits]
+max_msg_buffer = 100
+ctx_max_tokens = 2048
+recent_messages_limit = 20
+summarize_max_messages = 100
+
+[scheduler]
+check_interval_minutes = 1
+timezone = "Europe/Belgrade"
+
+[prompts]
+summarize_system = """You are a community secretary assistant. Analyze the provided chat messages and create:
+
+1. A chat summary (max 1000 tokens) highlighting:
+   - Main discussion topics with frequency counts
+   - Important decisions or conclusions
+   - Upcoming events or deadlines
+
+2. User profiles for each participant with:
+   - Topics they seem interested in (likes) with engagement scores
+   - Topics they dislike or criticize with frequency
+   - Personality traits and communication style
+
+Respond ONLY with valid JSON in this exact format:
+{
+  "chat_summary": {
+    "summary": "Brief summary of chat discussions...",
+    "topics": {"topic1": 5, "topic2": 3},
+    "next_events": "Upcoming events or deadlines..."
+  },
+  "user_profiles": {
+    "user_id": {
+      "likes": {"topic1": 4, "topic2": 2},
+      "dislikes": {"topic3": 1},
+      "traits": "Communication style and personality traits..."
+    }
+  }
+}"""
+
+response_system = "You are William, the community secretary. You help manage and respond to community discussions." 

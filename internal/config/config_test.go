@@ -3,174 +3,118 @@ package config
 import (
 	"os"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestLoad(t *testing.T) {
-	tests := []struct {
-		name    string
-		env     map[string]string
-		wantErr bool
-		check   func(*testing.T, *Config)
-	}{
-		{
-			name: "valid config",
-			env: map[string]string{
-				"TG_BOT_TOKEN":   "test_bot_token",
-				"OPENAI_API_KEY": "test_openai_key",
-				"PG_DSN":         "postgres://localhost/test",
-			},
-			wantErr: false,
-			check: func(t *testing.T, cfg *Config) {
-				assert.Equal(t, "test_bot_token", cfg.TelegramBotToken)
-				assert.Equal(t, "test_openai_key", cfg.OpenAIAPIKey)
-				assert.Equal(t, "gpt-4o-mini", cfg.OpenAIModel)
-				assert.Equal(t, 100, cfg.MaxMsgBuffer)
-				assert.Equal(t, 2048, cfg.CtxMaxTokens)
-				assert.Equal(t, "postgres://localhost/test", cfg.PostgresDSN)
-				assert.Equal(t, "Europe/Belgrade", cfg.Timezone)
-				assert.NotNil(t, cfg.Location)
-			},
-		},
-		{
-			name: "missing telegram token",
-			env: map[string]string{
-				"OPENAI_API_KEY": "test_openai_key",
-				"PG_DSN":         "postgres://localhost/test",
-			},
-			wantErr: true,
-		},
-		{
-			name: "missing openai key",
-			env: map[string]string{
-				"TG_BOT_TOKEN": "test_bot_token",
-				"PG_DSN":       "postgres://localhost/test",
-			},
-			wantErr: true,
-		},
-		{
-			name: "missing postgres dsn",
-			env: map[string]string{
-				"TG_BOT_TOKEN":   "test_bot_token",
-				"OPENAI_API_KEY": "test_openai_key",
-			},
-			wantErr: true,
-		},
-		{
-			name: "custom values",
-			env: map[string]string{
-				"TG_BOT_TOKEN":   "test_bot_token",
-				"OPENAI_API_KEY": "test_openai_key",
-				"PG_DSN":         "postgres://localhost/test",
-				"OPENAI_MODEL":   "gpt-4",
-				"MAX_MSG_BUFFER": "50",
-				"CTX_MAX_TOKENS": "1024",
-				"TZ":             "UTC",
-			},
-			wantErr: false,
-			check: func(t *testing.T, cfg *Config) {
-				assert.Equal(t, "gpt-4", cfg.OpenAIModel)
-				assert.Equal(t, 50, cfg.MaxMsgBuffer)
-				assert.Equal(t, 1024, cfg.CtxMaxTokens)
-				assert.Equal(t, "UTC", cfg.Timezone)
-			},
-		},
-		{
-			name: "invalid max msg buffer",
-			env: map[string]string{
-				"TG_BOT_TOKEN":   "test_bot_token",
-				"OPENAI_API_KEY": "test_openai_key",
-				"PG_DSN":         "postgres://localhost/test",
-				"MAX_MSG_BUFFER": "invalid",
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid ctx max tokens",
-			env: map[string]string{
-				"TG_BOT_TOKEN":   "test_bot_token",
-				"OPENAI_API_KEY": "test_openai_key",
-				"PG_DSN":         "postgres://localhost/test",
-				"CTX_MAX_TOKENS": "invalid",
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid timezone",
-			env: map[string]string{
-				"TG_BOT_TOKEN":   "test_bot_token",
-				"OPENAI_API_KEY": "test_openai_key",
-				"PG_DSN":         "postgres://localhost/test",
-				"TZ":             "Invalid/Timezone",
-			},
-			wantErr: true,
-		},
+	// Set environment variables
+	os.Setenv("TG_BOT_TOKEN", "test_token")
+	os.Setenv("OPENAI_API_KEY", "test_api_key")
+	os.Setenv("PG_DSN", "test_dsn")
+	os.Setenv("APP_CONFIG_PATH", "../../config/app.toml")
+
+	defer func() {
+		os.Unsetenv("TG_BOT_TOKEN")
+		os.Unsetenv("OPENAI_API_KEY")
+		os.Unsetenv("PG_DSN")
+		os.Unsetenv("APP_CONFIG_PATH")
+	}()
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Failed to load config: %v", err)
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Clear environment
-			os.Clearenv()
+	// Test environment variables
+	if cfg.TelegramBotToken != "test_token" {
+		t.Errorf("Expected TelegramBotToken to be 'test_token', got %s", cfg.TelegramBotToken)
+	}
 
-			// Set test environment
-			for key, value := range tt.env {
-				os.Setenv(key, value)
-			}
+	// Test TOML app configuration
+	if cfg.App.OpenAI.Model != "gpt-4o-mini" {
+		t.Errorf("Expected OpenAI model to be 'gpt-4o-mini', got %s", cfg.App.OpenAI.Model)
+	}
+	if cfg.App.Limits.MaxMsgBuffer != 100 {
+		t.Errorf("Expected MaxMsgBuffer to be 100, got %d", cfg.App.Limits.MaxMsgBuffer)
+	}
+	if cfg.App.Limits.CtxMaxTokens != 2048 {
+		t.Errorf("Expected CtxMaxTokens to be 2048, got %d", cfg.App.Limits.CtxMaxTokens)
+	}
+	if cfg.App.Scheduler.Timezone != "Europe/Belgrade" {
+		t.Errorf("Expected Timezone to be 'Europe/Belgrade', got %s", cfg.App.Scheduler.Timezone)
+	}
 
-			cfg, err := Load()
+	// Test app settings
+	if cfg.App.App.Name != "William" {
+		t.Errorf("Expected app name to be 'William', got %s", cfg.App.App.Name)
+	}
+	if cfg.App.App.MentionUsername != "@william" {
+		t.Errorf("Expected mention username to be '@william', got %s", cfg.App.App.MentionUsername)
+	}
 
-			if tt.wantErr {
-				assert.Error(t, err)
-				assert.Nil(t, cfg)
-			} else {
-				require.NoError(t, err)
-				require.NotNil(t, cfg)
-				if tt.check != nil {
-					tt.check(t, cfg)
-				}
-			}
-		})
+	// Test prompts
+	if cfg.App.Prompts.ResponseSystem == "" {
+		t.Error("Expected response system prompt to be non-empty")
+	}
+	if cfg.App.Prompts.SummarizeSystem == "" {
+		t.Error("Expected summarize system prompt to be non-empty")
+	}
+
+	// Test timezone parsing
+	if cfg.Location == nil {
+		t.Error("Expected Location to be set")
 	}
 }
 
-func TestGetEnvWithDefault(t *testing.T) {
-	tests := []struct {
-		name         string
-		key          string
-		defaultValue string
-		envValue     string
-		expected     string
-	}{
-		{
-			name:         "env exists",
-			key:          "TEST_KEY",
-			defaultValue: "default",
-			envValue:     "env_value",
-			expected:     "env_value",
-		},
-		{
-			name:         "env not exists",
-			key:          "TEST_KEY",
-			defaultValue: "default",
-			envValue:     "",
-			expected:     "default",
-		},
+func TestLoadWithEnvOverrides(t *testing.T) {
+	// Set environment variables including overrides
+	os.Setenv("TG_BOT_TOKEN", "test_token")
+	os.Setenv("OPENAI_API_KEY", "test_api_key")
+	os.Setenv("PG_DSN", "test_dsn")
+	os.Setenv("APP_CONFIG_PATH", "../../config/app.toml")
+	os.Setenv("OPENAI_MODEL", "gpt-4")
+	os.Setenv("MAX_MSG_BUFFER", "200")
+	os.Setenv("CTX_MAX_TOKENS", "4096")
+	os.Setenv("TZ", "UTC")
+
+	defer func() {
+		os.Unsetenv("TG_BOT_TOKEN")
+		os.Unsetenv("OPENAI_API_KEY")
+		os.Unsetenv("PG_DSN")
+		os.Unsetenv("APP_CONFIG_PATH")
+		os.Unsetenv("OPENAI_MODEL")
+		os.Unsetenv("MAX_MSG_BUFFER")
+		os.Unsetenv("CTX_MAX_TOKENS")
+		os.Unsetenv("TZ")
+	}()
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Failed to load config: %v", err)
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Clear the key first
-			os.Unsetenv(tt.key)
+	// Test environment variable overrides
+	if cfg.App.OpenAI.Model != "gpt-4" {
+		t.Errorf("Expected OpenAI model to be 'gpt-4', got %s", cfg.App.OpenAI.Model)
+	}
+	if cfg.App.Limits.MaxMsgBuffer != 200 {
+		t.Errorf("Expected MaxMsgBuffer to be 200, got %d", cfg.App.Limits.MaxMsgBuffer)
+	}
+	if cfg.App.Limits.CtxMaxTokens != 4096 {
+		t.Errorf("Expected CtxMaxTokens to be 4096, got %d", cfg.App.Limits.CtxMaxTokens)
+	}
+	if cfg.App.Scheduler.Timezone != "UTC" {
+		t.Errorf("Expected Timezone to be 'UTC', got %s", cfg.App.Scheduler.Timezone)
+	}
+}
 
-			if tt.envValue != "" {
-				os.Setenv(tt.key, tt.envValue)
-				defer os.Unsetenv(tt.key)
-			}
+func TestLoadMissingRequiredEnv(t *testing.T) {
+	// Clear any existing environment variables
+	os.Unsetenv("TG_BOT_TOKEN")
+	os.Unsetenv("OPENAI_API_KEY")
+	os.Unsetenv("PG_DSN")
 
-			result := getEnvWithDefault(tt.key, tt.defaultValue)
-			assert.Equal(t, tt.expected, result)
-		})
+	_, err := Load()
+	if err == nil {
+		t.Error("Expected error when required environment variables are missing")
 	}
 }

@@ -124,7 +124,7 @@ func (l *Listener) handleMessage(ctx context.Context, msg *telego.Message) {
 
 	// Increment message counter and check if we need to summarize
 	count := l.counters.Increment(msg.Chat.ID)
-	if count >= l.config.MaxMsgBuffer {
+	if count >= l.config.App.Limits.MaxMsgBuffer {
 		// Reset counter and trigger summarization
 		l.counters.Reset(msg.Chat.ID)
 
@@ -139,11 +139,11 @@ func (l *Listener) handleMessage(ctx context.Context, msg *telego.Message) {
 
 // isMentionOrReply checks if message mentions the bot or is a reply to bot
 func (l *Listener) isMentionOrReply(msg *telego.Message) bool {
-	// Check for @william mention
+	// Check for bot mention
 	for _, entity := range msg.Entities {
 		if entity.Type == "mention" {
 			mentionText := msg.Text[entity.Offset : entity.Offset+entity.Length]
-			if mentionText == "@william" {
+			if mentionText == l.config.App.App.MentionUsername {
 				return true
 			}
 		}

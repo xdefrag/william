@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/xdefrag/william/internal/config"
 	"github.com/xdefrag/william/internal/gpt"
 	"github.com/xdefrag/william/internal/repo"
 )
@@ -12,13 +13,15 @@ import (
 type Builder struct {
 	repo      *repo.Repository
 	gptClient *gpt.Client
+	config    *config.Config
 }
 
 // New creates a new context builder
-func New(repo *repo.Repository, gptClient *gpt.Client) *Builder {
+func New(repo *repo.Repository, gptClient *gpt.Client, cfg *config.Config) *Builder {
 	return &Builder{
 		repo:      repo,
 		gptClient: gptClient,
+		config:    cfg,
 	}
 }
 
@@ -36,7 +39,7 @@ func (b *Builder) BuildContextForResponse(ctx context.Context, chatID, userID in
 		return nil, fmt.Errorf("failed to get user summary: %w", err)
 	}
 
-	// Get recent unsummarized messages (last 20 for context)
+	// Get recent unsummarized messages
 	var lastSummaryID int64 = 0
 	if chatSummary != nil {
 		lastSummaryID = chatSummary.ID
@@ -47,9 +50,10 @@ func (b *Builder) BuildContextForResponse(ctx context.Context, chatID, userID in
 		return nil, fmt.Errorf("failed to get recent messages: %w", err)
 	}
 
-	// Limit to last 20 messages for context
-	if len(recentMessages) > 20 {
-		recentMessages = recentMessages[len(recentMessages)-20:]
+	// Limit to configured number of recent messages for context
+	limit := b.config.App.Limits.RecentMessagesLimit
+	if len(recentMessages) > limit {
+		recentMessages = recentMessages[len(recentMessages)-limit:]
 	}
 
 	return &gpt.ContextRequest{

@@ -8,21 +8,22 @@ import (
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 	"github.com/openai/openai-go/shared"
+	"github.com/xdefrag/william/internal/config"
 	"github.com/xdefrag/william/pkg/models"
 )
 
 // Client wraps OpenAI client
 type Client struct {
 	client *openai.Client
-	model  string
+	config *config.Config
 }
 
 // New creates a new GPT client
-func New(apiKey, model string) *Client {
+func New(apiKey string, cfg *config.Config) *Client {
 	client := openai.NewClient(option.WithAPIKey(apiKey))
 	return &Client{
 		client: &client,
-		model:  model,
+		config: cfg,
 	}
 }
 
@@ -71,34 +72,7 @@ func (c *Client) Summarize(ctx context.Context, req SummarizeRequest) (*Summariz
 		}
 	}
 
-	systemPrompt := `You are a community secretary assistant. Analyze the provided chat messages and create:
-
-1. A chat summary (max 1000 tokens) highlighting:
-   - Main discussion topics with frequency counts
-   - Important decisions or conclusions
-   - Upcoming events or deadlines
-
-2. User profiles for each participant with:
-   - Topics they seem interested in (likes) with engagement scores
-   - Topics they dislike or criticize with frequency
-   - Personality traits and communication style
-
-Respond ONLY with valid JSON in this exact format:
-{
-  "chat_summary": {
-    "summary": "Brief summary of chat discussions...",
-    "topics": {"topic1": 5, "topic2": 3},
-    "next_events": "Upcoming events or deadlines..."
-  },
-  "user_profiles": {
-    "user_id": {
-      "likes": {"topic1": 4, "topic2": 2},
-      "dislikes": {"topic3": 1},
-      "traits": "Communication style and personality traits..."
-    }
-  }
-}`
-
+	systemPrompt := c.config.App.Prompts.SummarizeSystem
 	userPrompt := fmt.Sprintf("Chat ID: %d\n\nMessages:\n%s", req.ChatID, messagesText)
 
 	resp, err := c.client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
@@ -106,9 +80,9 @@ Respond ONLY with valid JSON in this exact format:
 			openai.SystemMessage(systemPrompt),
 			openai.UserMessage(userPrompt),
 		},
-		Model:       shared.ChatModel(c.model),
-		MaxTokens:   openai.Int(2048),
-		Temperature: openai.Float(0.7),
+		Model:       shared.ChatModel(c.config.App.OpenAI.Model),
+		MaxTokens:   openai.Int(int64(c.config.App.OpenAI.MaxTokensSummarize)),
+		Temperature: openai.Float(c.config.App.OpenAI.Temperature),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to call OpenAI: %w", err)
@@ -131,7 +105,7 @@ Respond ONLY with valid JSON in this exact format:
 // GenerateResponse creates context-aware response for user query
 func (c *Client) GenerateResponse(ctx context.Context, req ContextRequest) (string, error) {
 	// Build system prompt
-	systemPrompt := "You are William, the community secretary. You help manage and respond to community discussions."
+	systemPrompt := c.config.App.Prompts.ResponseSystem
 
 	// Add chat context
 	if req.ChatSummary != nil {
@@ -184,9 +158,9 @@ func (c *Client) GenerateResponse(ctx context.Context, req ContextRequest) (stri
 			openai.SystemMessage(systemPrompt),
 			openai.UserMessage(userPrompt),
 		},
-		Model:       shared.ChatModel(c.model),
-		MaxTokens:   openai.Int(1024),
-		Temperature: openai.Float(0.7),
+		Model:       shared.ChatModel(c.config.App.OpenAI.Model),
+		MaxTokens:   openai.Int(int64(c.config.App.OpenAI.MaxTokensResponse)),
+		Temperature: openai.Float(c.config.App.OpenAI.Temperature),
 	})
 	if err != nil {
 		return "", fmt.Errorf("failed to call OpenAI: %w", err)

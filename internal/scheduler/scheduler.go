@@ -64,7 +64,8 @@ func (s *Scheduler) Stop() {
 
 // runMidnightScheduler runs the midnight scheduler
 func (s *Scheduler) runMidnightScheduler(ctx context.Context) {
-	ticker := time.NewTicker(1 * time.Minute) // Check every minute
+	interval := time.Duration(s.config.App.Scheduler.CheckIntervalMinutes) * time.Minute
+	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
 	for {

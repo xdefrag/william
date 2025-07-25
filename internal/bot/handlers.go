@@ -8,6 +8,7 @@ import (
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/mymmrac/telego"
+	"github.com/xdefrag/william/internal/config"
 	williamcontext "github.com/xdefrag/william/internal/context"
 	"github.com/xdefrag/william/internal/gpt"
 	"github.com/xdefrag/william/internal/repo"
@@ -20,6 +21,7 @@ type Handlers struct {
 	builder    *williamcontext.Builder
 	summarizer *williamcontext.Summarizer
 	gptClient  *gpt.Client
+	config     *config.Config
 	logger     watermill.LoggerAdapter
 }
 
@@ -30,6 +32,7 @@ func NewHandlers(
 	builder *williamcontext.Builder,
 	summarizer *williamcontext.Summarizer,
 	gptClient *gpt.Client,
+	config *config.Config,
 	logger watermill.LoggerAdapter,
 ) *Handlers {
 	return &Handlers{
@@ -38,6 +41,7 @@ func NewHandlers(
 		builder:    builder,
 		summarizer: summarizer,
 		gptClient:  gptClient,
+		config:     config,
 		logger:     logger,
 	}
 }
@@ -54,7 +58,7 @@ func (h *Handlers) HandleSummarizeEvent(msg *message.Message) error {
 	})
 
 	ctx := context.Background()
-	if err := h.summarizer.SummarizeChat(ctx, event.ChatID, 100); err != nil {
+	if err := h.summarizer.SummarizeChat(ctx, event.ChatID, h.config.App.Limits.SummarizeMaxMessages); err != nil {
 		h.logger.Error("Failed to summarize chat", err, watermill.LogFields{
 			"chat_id": event.ChatID,
 		})
@@ -137,7 +141,7 @@ func (h *Handlers) HandleMidnightEvent(msg *message.Message) error {
 	ctx := context.Background()
 
 	// Summarize all active chats
-	if err := h.summarizer.SummarizeAllActiveChats(ctx, event.Timestamp.AddDate(0, 0, -1), 100); err != nil {
+	if err := h.summarizer.SummarizeAllActiveChats(ctx, event.Timestamp.AddDate(0, 0, -1), h.config.App.Limits.SummarizeMaxMessages); err != nil {
 		h.logger.Error("Failed to summarize active chats", err, nil)
 		return err
 	}
@@ -148,13 +152,13 @@ func (h *Handlers) HandleMidnightEvent(msg *message.Message) error {
 
 // extractUserQuery removes @william mention from the text
 func (h *Handlers) extractUserQuery(text string) string {
-	// Remove @william mention
-	query := strings.ReplaceAll(text, "@william", "")
+	// Remove bot mention
+	query := strings.ReplaceAll(text, h.config.App.App.MentionUsername, "")
 	query = strings.TrimSpace(query)
 
 	// If query is empty, provide default response
 	if query == "" {
-		query = "Hello! How can I help you?"
+		query = h.config.App.App.DefaultResponse
 	}
 
 	return query

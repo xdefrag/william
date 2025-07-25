@@ -7,6 +7,7 @@ require (
 	github.com/jackc/pgx/v5 v5.7.4
 	github.com/mymmrac/telego v1.2.0
 	github.com/openai/openai-go v1.8.2
+	github.com/pelletier/go-toml/v2 v2.2.4
 	github.com/samber/do v1.6.0
 	github.com/samber/lo v1.51.0
 	github.com/stretchr/testify v1.10.0
