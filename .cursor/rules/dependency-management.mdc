@@ -1,0 +1,136 @@
+---
+alwaysApply: true
+---
+
+
+# Dependency Management Rules
+
+## Critical: Fixed Dependencies Only!
+
+⚠️ **NEVER add new dependencies without approval!** ⚠️
+
+### Allowed Dependencies
+All allowed dependencies are listed in [allowed-mods.txt](mdc:allowed-mods.txt):
+
+**Core Dependencies (Fixed Versions):**
+- `github.com/mymmrac/telego v1.2.0` - Telegram API
+- `github.com/openai/openai-go v1.8.2` - **CRITICAL: Must be v1.8.2, not v1.11.1+**
+- `github.com/jackc/pgx/v5 v5.7.4` - PostgreSQL driver
+- `github.com/ThreeDotsLabs/watermill v1.4.6` - Event streaming
+- `github.com/samber/do v1.6.0` - Dependency injection
+- `github.com/samber/lo v1.50.0` - Utility functions
+
+### Version Enforcement
+```bash
+# Check for unauthorized imports
+make check-imports
+
+# This command validates against allowed-mods.txt
+go list -m all | grep -vFf allowed-mods.txt
+```
+
+### Adding New Dependencies
+1. **STOP** - Get approval first!
+2. Update [allowed-mods.txt](mdc:allowed-mods.txt)
+3. Update [go.mod](mdc:go.mod) with exact version
+4. Run `go mod tidy`
+5. Test with `make check-imports`
+
+### Critical API Usage
+
+#### OpenAI v1.8.2 Specific Patterns
+```go
+// Correct usage for v1.8.2
+resp, err := c.client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
+    Messages: []openai.ChatCompletionMessageParamUnion{
+        openai.SystemMessage(prompt),
+        openai.UserMessage(query),
+    },
+    Model:       shared.ChatModel(c.model),  // Use shared.ChatModel!
+    MaxTokens:   openai.Int(2048),           // Use openai.Int!
+    Temperature: openai.Float(0.7),          // Use openai.Float!
+})
+```
+
+#### Telego v1.2.0 Patterns
+```go
+// Context required for all API calls
+updates, err := l.bot.UpdatesViaLongPolling(ctx, nil)
+botInfo, err := l.bot.GetMe(ctx)
+```
+
+### Forbidden Actions
+- ❌ `go get` new packages without approval
+- ❌ Updating existing package versions
+- ❌ Using different OpenAI client versions
+- ❌ Alternative Telegram libraries
+- ❌ Different SQL drivers than pgx/v5
+
+- ❌ Alternative Telegram libraries
+- ❌ Different SQL drivers than pgx/v5
+
+# Dependency Management Rules
+
+## Critical: Fixed Dependencies Only!
+
+⚠️ **NEVER add new dependencies without approval!** ⚠️
+
+### Allowed Dependencies
+All allowed dependencies are listed in [allowed-mods.txt](mdc:allowed-mods.txt):
+
+**Core Dependencies (Fixed Versions):**
+- `github.com/mymmrac/telego v1.2.0` - Telegram API
+- `github.com/openai/openai-go v1.8.2` - **CRITICAL: Must be v1.8.2, not v1.11.1+**
+- `github.com/jackc/pgx/v5 v5.7.4` - PostgreSQL driver
+- `github.com/ThreeDotsLabs/watermill v1.4.6` - Event streaming
+- `github.com/samber/do v1.6.0` - Dependency injection
+- `github.com/samber/lo v1.50.0` - Utility functions
+
+### Version Enforcement
+```bash
+# Check for unauthorized imports
+make check-imports
+
+# This command validates against allowed-mods.txt
+go list -m all | grep -vFf allowed-mods.txt
+```
+
+### Adding New Dependencies
+1. **STOP** - Get approval first!
+2. Update [allowed-mods.txt](mdc:allowed-mods.txt)
+3. Update [go.mod](mdc:go.mod) with exact version
+4. Run `go mod tidy`
+5. Test with `make check-imports`
+
+### Critical API Usage
+
+#### OpenAI v1.8.2 Specific Patterns
+```go
+// Correct usage for v1.8.2
+resp, err := c.client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
+    Messages: []openai.ChatCompletionMessageParamUnion{
+        openai.SystemMessage(prompt),
+        openai.UserMessage(query),
+    },
+    Model:       shared.ChatModel(c.model),  // Use shared.ChatModel!
+    MaxTokens:   openai.Int(2048),           // Use openai.Int!
+    Temperature: openai.Float(0.7),          // Use openai.Float!
+})
+```
+
+#### Telego v1.2.0 Patterns
+```go
+// Context required for all API calls
+updates, err := l.bot.UpdatesViaLongPolling(ctx, nil)
+botInfo, err := l.bot.GetMe(ctx)
+```
+
+### Forbidden Actions
+- ❌ `go get` new packages without approval
+- ❌ Updating existing package versions
+- ❌ Using different OpenAI client versions
+- ❌ Alternative Telegram libraries
+- ❌ Different SQL drivers than pgx/v5
+
+- ❌ Alternative Telegram libraries
+- ❌ Different SQL drivers than pgx/v5
