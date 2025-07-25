@@ -98,6 +98,14 @@ func (l *Listener) handleMessage(ctx context.Context, msg *telego.Message) {
 		return
 	}
 
+	// Check if chat is allowed to use the bot
+	if !l.config.IsChatAllowed(msg.Chat.ID) {
+		l.logger.Debug("Message from non-allowed chat ignored", watermill.LogFields{
+			"chat_id": msg.Chat.ID,
+		})
+		return
+	}
+
 	// Create message model
 	message := &models.Message{
 		TelegramMsgID: int64(msg.MessageID),

@@ -12,10 +12,11 @@ import (
 // AppConfig holds application settings from TOML file
 type AppConfig struct {
 	App struct {
-		Name            string `toml:"name"`
-		Description     string `toml:"description"`
-		MentionUsername string `toml:"mention_username"`
-		DefaultResponse string `toml:"default_response"`
+		Name            string  `toml:"name"`
+		Description     string  `toml:"description"`
+		MentionUsername string  `toml:"mention_username"`
+		DefaultResponse string  `toml:"default_response"`
+		AllowedChats    []int64 `toml:"allowed_chats"`
 	} `toml:"app"`
 
 	OpenAI struct {
@@ -136,4 +137,22 @@ func getEnvWithDefault(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
+}
+
+// IsChatAllowed checks if a chat ID is in the allowed chats list
+// If AllowedChats is empty, all chats are allowed
+func (c *Config) IsChatAllowed(chatID int64) bool {
+	// If no restrictions are set, allow all chats
+	if len(c.App.App.AllowedChats) == 0 {
+		return true
+	}
+
+	// Check if chatID is in the allowed list
+	for _, allowedID := range c.App.App.AllowedChats {
+		if allowedID == chatID {
+			return true
+		}
+	}
+
+	return false
 }
