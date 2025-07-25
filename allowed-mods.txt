@@ -1,0 +1,11 @@
+github.com/mymmrac/telego
+github.com/jackc/pgx/v5
+github.com/ThreeDotsLabs/watermill
+github.com/ThreeDotsLabs/watermill-sql/v2
+github.com/pressly/goose/v3
+github.com/samber/do
+github.com/samber/lo
+github.com/segmentio/ksuid
+github.com/openai/openai-go
+github.com/stretchr/testify
+github.com/urfave/cli/v2 
