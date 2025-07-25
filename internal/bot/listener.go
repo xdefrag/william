@@ -95,16 +95,27 @@ func (l *Listener) Start(ctx context.Context) error {
 func (l *Listener) handleMessage(ctx context.Context, msg *telego.Message) {
 	// Skip messages without text or from bots
 	if msg.Text == "" || msg.From.IsBot {
+		l.logger.Debug("Skipping message - no text or from bot", watermill.LogFields{
+			"has_text": msg.Text != "",
+			"is_bot":   msg.From.IsBot,
+		})
 		return
 	}
 
 	// Check if chat is allowed to use the bot
 	if !l.config.IsChatAllowed(msg.Chat.ID) {
-		l.logger.Debug("Message from non-allowed chat ignored", watermill.LogFields{
-			"chat_id": msg.Chat.ID,
+		l.logger.Info("Message from non-allowed chat ignored", watermill.LogFields{
+			"chat_id":       msg.Chat.ID,
+			"allowed_chats": l.config.App.App.AllowedChats,
 		})
 		return
 	}
+
+	l.logger.Info("Processing message", watermill.LogFields{
+		"chat_id": msg.Chat.ID,
+		"user_id": msg.From.ID,
+		"text":    msg.Text,
+	})
 
 	// Create message model
 	message := &models.Message{

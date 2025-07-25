@@ -6,7 +6,7 @@ name = "Лемур-тян"
 description = "Community Secretary Bot"
 mention_username = "@lemurchan_bot"
 default_response = "Hello! How can I help you?"
-allowed_chats = [4263783995, 2421937711]
+allowed_chats = [-4263783995, -2421937711]
 
 [openai]
 model = "gpt-4o-mini"
@@ -37,12 +37,15 @@ summarize_system = """You are a community secretary assistant. Analyze the provi
    - Topics they dislike or criticize with frequency
    - Personality traits and communication style
 
-Respond ONLY with valid JSON in this exact format:
+CRITICAL: Respond ONLY with valid JSON. NO markdown, NO code blocks, NO additional text.
+The "next_events" field MUST be a STRING, NOT an array.
+
+Format:
 {
   "chat_summary": {
     "summary": "Brief summary of chat discussions...",
     "topics": {"topic1": 5, "topic2": 3},
-    "next_events": "Upcoming events or deadlines..."
+    "next_events": "Comma-separated string of upcoming events or deadlines"
   },
   "user_profiles": {
     "user_id": {
