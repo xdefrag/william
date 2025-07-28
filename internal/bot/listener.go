@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"sync"
 	"time"
 
 	"github.com/ThreeDotsLabs/watermill"
@@ -15,43 +14,12 @@ import (
 	"github.com/xdefrag/william/pkg/models"
 )
 
-// MessageCounters tracks message counts per chat for triggering summarization
-type MessageCounters struct {
-	mu       sync.RWMutex
-	counters map[int64]int
-}
-
-// NewMessageCounters creates a new message counters instance
-func NewMessageCounters() *MessageCounters {
-	return &MessageCounters{
-		counters: make(map[int64]int),
-	}
-}
-
-// Increment increments counter for a chat and returns current count
-func (mc *MessageCounters) Increment(chatID int64) int {
-	mc.mu.Lock()
-	defer mc.mu.Unlock()
-
-	mc.counters[chatID]++
-	return mc.counters[chatID]
-}
-
-// Reset resets counter for a chat
-func (mc *MessageCounters) Reset(chatID int64) {
-	mc.mu.Lock()
-	defer mc.mu.Unlock()
-
-	mc.counters[chatID] = 0
-}
-
 // Listener handles Telegram updates
 type Listener struct {
 	bot       *telego.Bot
 	repo      *repo.Repository
 	config    *config.Config
 	publisher message.Publisher
-	counters  *MessageCounters
 	logger    *slog.Logger
 }
 
@@ -62,7 +30,6 @@ func New(bot *telego.Bot, repo *repo.Repository, cfg *config.Config, publisher m
 		repo:      repo,
 		config:    cfg,
 		publisher: publisher,
-		counters:  NewMessageCounters(),
 		logger:    logger.WithGroup("bot.listener"),
 	}
 }
@@ -172,7 +139,14 @@ func (l *Listener) handleMessage(ctx context.Context, msg *telego.Message) {
 	}
 
 	// Increment message counter and check if we need to summarize
-	count := l.counters.Increment(msg.Chat.ID)
+	count, err := l.repo.IncrementMessageCounter(ctx, msg.Chat.ID)
+	if err != nil {
+		l.logger.ErrorContext(ctx, "Failed to increment message counter", slog.Any("error", err),
+			slog.Int64("chat_id", msg.Chat.ID),
+		)
+		return
+	}
+
 	l.logger.InfoContext(ctx, "Message counter incremented",
 		slog.Int64("chat_id", msg.Chat.ID),
 		slog.Int("count", count),
@@ -181,7 +155,13 @@ func (l *Listener) handleMessage(ctx context.Context, msg *telego.Message) {
 
 	if count >= l.config.App.Limits.MaxMsgBuffer {
 		// Reset counter and trigger summarization
-		l.counters.Reset(msg.Chat.ID)
+		if err := l.repo.ResetMessageCounter(ctx, msg.Chat.ID); err != nil {
+			l.logger.ErrorContext(ctx, "Failed to reset message counter", slog.Any("error", err),
+				slog.Int64("chat_id", msg.Chat.ID),
+			)
+			return
+		}
+
 		l.logger.InfoContext(ctx, "Triggering summarization",
 			slog.Int64("chat_id", msg.Chat.ID),
 		)
@@ -292,13 +272,12 @@ func (l *Listener) publishMentionEvent(ctx context.Context, msg *telego.Message)
 
 // ResetCountersForAllChats resets message counters for all chats (used at midnight)
 func (l *Listener) ResetCountersForAllChats() {
-	l.counters.mu.Lock()
-	defer l.counters.mu.Unlock()
+	ctx := context.Background()
 
-	// Clear all counters
-	for chatID := range l.counters.counters {
-		l.counters.counters[chatID] = 0
+	if err := l.repo.ResetAllMessageCounters(ctx); err != nil {
+		l.logger.ErrorContext(ctx, "Failed to reset all message counters", slog.Any("error", err))
+		return
 	}
 
-	l.logger.InfoContext(context.Background(), "Reset message counters for all chats")
+	l.logger.InfoContext(ctx, "Reset message counters for all chats")
 }

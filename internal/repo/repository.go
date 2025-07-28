@@ -341,3 +341,71 @@ func (r *Repository) RemoveAllowedChat(ctx context.Context, chatID int64) error 
 
 	return nil
 }
+
+// Message counters operations
+
+// GetMessageCounter gets the current message counter for a chat
+func (r *Repository) GetMessageCounter(ctx context.Context, chatID int64) (int, error) {
+	query := `SELECT count FROM message_counters WHERE chat_id = $1`
+
+	var count int
+	err := r.pool.QueryRow(ctx, query, chatID).Scan(&count)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return 0, nil // Return 0 if no counter exists yet
+		}
+		return 0, fmt.Errorf("failed to get message counter: %w", err)
+	}
+
+	return count, nil
+}
+
+// IncrementMessageCounter increments the message counter for a chat and returns the new count
+func (r *Repository) IncrementMessageCounter(ctx context.Context, chatID int64) (int, error) {
+	query := `
+		INSERT INTO message_counters (chat_id, count, updated_at)
+		VALUES ($1, 1, $2)
+		ON CONFLICT (chat_id) 
+		DO UPDATE SET 
+			count = message_counters.count + 1,
+			updated_at = EXCLUDED.updated_at
+		RETURNING count`
+
+	var count int
+	err := r.pool.QueryRow(ctx, query, chatID, time.Now()).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to increment message counter: %w", err)
+	}
+
+	return count, nil
+}
+
+// ResetMessageCounter resets the message counter for a chat to 0
+func (r *Repository) ResetMessageCounter(ctx context.Context, chatID int64) error {
+	query := `
+		INSERT INTO message_counters (chat_id, count, updated_at)
+		VALUES ($1, 0, $2)
+		ON CONFLICT (chat_id) 
+		DO UPDATE SET 
+			count = 0,
+			updated_at = EXCLUDED.updated_at`
+
+	_, err := r.pool.Exec(ctx, query, chatID, time.Now())
+	if err != nil {
+		return fmt.Errorf("failed to reset message counter: %w", err)
+	}
+
+	return nil
+}
+
+// ResetAllMessageCounters resets all message counters to 0
+func (r *Repository) ResetAllMessageCounters(ctx context.Context) error {
+	query := `UPDATE message_counters SET count = 0, updated_at = $1`
+
+	_, err := r.pool.Exec(ctx, query, time.Now())
+	if err != nil {
+		return fmt.Errorf("failed to reset all message counters: %w", err)
+	}
+
+	return nil
+}
