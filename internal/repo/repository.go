@@ -47,16 +47,16 @@ func (j *JSONB) Scan(value interface{}) error {
 
 func (r *Repository) SaveMessage(ctx context.Context, msg *models.Message) error {
 	query := `
-		INSERT INTO messages (telegram_msg_id, chat_id, user_id, text, created_at)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO messages (telegram_msg_id, chat_id, user_id, user_first_name, user_last_name, username, text, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		RETURNING id`
 
-	return r.pool.QueryRow(ctx, query, msg.TelegramMsgID, msg.ChatID, msg.UserID, msg.Text, msg.CreatedAt).Scan(&msg.ID)
+	return r.pool.QueryRow(ctx, query, msg.TelegramMsgID, msg.ChatID, msg.UserID, msg.UserFirstName, msg.UserLastName, msg.Username, msg.Text, msg.CreatedAt).Scan(&msg.ID)
 }
 
 func (r *Repository) GetLatestMessagesByChatID(ctx context.Context, chatID int64, limit int) ([]*models.Message, error) {
 	query := `
-		SELECT id, telegram_msg_id, chat_id, user_id, text, created_at
+		SELECT id, telegram_msg_id, chat_id, user_id, user_first_name, user_last_name, username, text, created_at
 		FROM messages 
 		WHERE chat_id = $1 
 		ORDER BY id DESC 
@@ -71,7 +71,7 @@ func (r *Repository) GetLatestMessagesByChatID(ctx context.Context, chatID int64
 	var messages []*models.Message
 	for rows.Next() {
 		msg := &models.Message{}
-		err := rows.Scan(&msg.ID, &msg.TelegramMsgID, &msg.ChatID, &msg.UserID, &msg.Text, &msg.CreatedAt)
+		err := rows.Scan(&msg.ID, &msg.TelegramMsgID, &msg.ChatID, &msg.UserID, &msg.UserFirstName, &msg.UserLastName, &msg.Username, &msg.Text, &msg.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -83,7 +83,7 @@ func (r *Repository) GetLatestMessagesByChatID(ctx context.Context, chatID int64
 
 func (r *Repository) GetMessagesAfterID(ctx context.Context, chatID, afterID int64) ([]*models.Message, error) {
 	query := `
-		SELECT id, telegram_msg_id, chat_id, user_id, text, created_at
+		SELECT id, telegram_msg_id, chat_id, user_id, user_first_name, user_last_name, username, text, created_at
 		FROM messages 
 		WHERE chat_id = $1 AND id > $2
 		ORDER BY id ASC`
@@ -97,7 +97,7 @@ func (r *Repository) GetMessagesAfterID(ctx context.Context, chatID, afterID int
 	var messages []*models.Message
 	for rows.Next() {
 		msg := &models.Message{}
-		err := rows.Scan(&msg.ID, &msg.TelegramMsgID, &msg.ChatID, &msg.UserID, &msg.Text, &msg.CreatedAt)
+		err := rows.Scan(&msg.ID, &msg.TelegramMsgID, &msg.ChatID, &msg.UserID, &msg.UserFirstName, &msg.UserLastName, &msg.Username, &msg.Text, &msg.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -111,8 +111,14 @@ func (r *Repository) GetMessagesAfterID(ctx context.Context, chatID, afterID int
 
 func (r *Repository) SaveChatSummary(ctx context.Context, summary *models.ChatSummary) error {
 	query := `
-		INSERT INTO chat_summaries (chat_id, summary, topics_json, next_events, created_at)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO chat_summaries (chat_id, summary, topics_json, next_events, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		ON CONFLICT (chat_id) 
+		DO UPDATE SET 
+			summary = EXCLUDED.summary,
+			topics_json = EXCLUDED.topics_json,
+			next_events = EXCLUDED.next_events,
+			updated_at = EXCLUDED.updated_at
 		RETURNING id`
 
 	topicsJSON, err := json.Marshal(summary.TopicsJSON)
@@ -120,15 +126,21 @@ func (r *Repository) SaveChatSummary(ctx context.Context, summary *models.ChatSu
 		return fmt.Errorf("failed to marshal topics JSON: %w", err)
 	}
 
-	return r.pool.QueryRow(ctx, query, summary.ChatID, summary.Summary, topicsJSON, summary.NextEvents, summary.CreatedAt).Scan(&summary.ID)
+	now := time.Now()
+	summary.UpdatedAt = now
+	if summary.CreatedAt.IsZero() {
+		summary.CreatedAt = now
+	}
+
+	return r.pool.QueryRow(ctx, query, summary.ChatID, summary.Summary, topicsJSON, summary.NextEvents, summary.CreatedAt, summary.UpdatedAt).Scan(&summary.ID)
 }
 
 func (r *Repository) GetLatestChatSummary(ctx context.Context, chatID int64) (*models.ChatSummary, error) {
 	query := `
-		SELECT id, chat_id, summary, topics_json, next_events, created_at
+		SELECT id, chat_id, summary, topics_json, next_events, created_at, updated_at
 		FROM chat_summaries 
 		WHERE chat_id = $1 
-		ORDER BY created_at DESC 
+		ORDER BY updated_at DESC 
 		LIMIT 1`
 
 	row := r.pool.QueryRow(ctx, query, chatID)
@@ -136,7 +148,7 @@ func (r *Repository) GetLatestChatSummary(ctx context.Context, chatID int64) (*m
 	summary := &models.ChatSummary{}
 	var topicsJSON []byte
 
-	err := row.Scan(&summary.ID, &summary.ChatID, &summary.Summary, &topicsJSON, &summary.NextEvents, &summary.CreatedAt)
+	err := row.Scan(&summary.ID, &summary.ChatID, &summary.Summary, &topicsJSON, &summary.NextEvents, &summary.CreatedAt, &summary.UpdatedAt)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, nil
@@ -155,8 +167,14 @@ func (r *Repository) GetLatestChatSummary(ctx context.Context, chatID int64) (*m
 
 func (r *Repository) SaveUserSummary(ctx context.Context, summary *models.UserSummary) error {
 	query := `
-		INSERT INTO user_summaries (chat_id, user_id, likes_json, dislikes_json, traits, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO user_summaries (chat_id, user_id, likes_json, dislikes_json, traits, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		ON CONFLICT (chat_id, user_id) 
+		DO UPDATE SET 
+			likes_json = EXCLUDED.likes_json,
+			dislikes_json = EXCLUDED.dislikes_json,
+			traits = EXCLUDED.traits,
+			updated_at = EXCLUDED.updated_at
 		RETURNING id`
 
 	likesJSON, err := json.Marshal(summary.LikesJSON)
@@ -169,15 +187,21 @@ func (r *Repository) SaveUserSummary(ctx context.Context, summary *models.UserSu
 		return fmt.Errorf("failed to marshal dislikes JSON: %w", err)
 	}
 
-	return r.pool.QueryRow(ctx, query, summary.ChatID, summary.UserID, likesJSON, dislikesJSON, summary.Traits, summary.CreatedAt).Scan(&summary.ID)
+	now := time.Now()
+	summary.UpdatedAt = now
+	if summary.CreatedAt.IsZero() {
+		summary.CreatedAt = now
+	}
+
+	return r.pool.QueryRow(ctx, query, summary.ChatID, summary.UserID, likesJSON, dislikesJSON, summary.Traits, summary.CreatedAt, summary.UpdatedAt).Scan(&summary.ID)
 }
 
 func (r *Repository) GetLatestUserSummary(ctx context.Context, chatID, userID int64) (*models.UserSummary, error) {
 	query := `
-		SELECT id, chat_id, user_id, likes_json, dislikes_json, traits, created_at
+		SELECT id, chat_id, user_id, likes_json, dislikes_json, traits, created_at, updated_at
 		FROM user_summaries 
 		WHERE chat_id = $1 AND user_id = $2 
-		ORDER BY created_at DESC 
+		ORDER BY updated_at DESC 
 		LIMIT 1`
 
 	row := r.pool.QueryRow(ctx, query, chatID, userID)
@@ -185,7 +209,7 @@ func (r *Repository) GetLatestUserSummary(ctx context.Context, chatID, userID in
 	summary := &models.UserSummary{}
 	var likesJSON, dislikesJSON []byte
 
-	err := row.Scan(&summary.ID, &summary.ChatID, &summary.UserID, &likesJSON, &dislikesJSON, &summary.Traits, &summary.CreatedAt)
+	err := row.Scan(&summary.ID, &summary.ChatID, &summary.UserID, &likesJSON, &dislikesJSON, &summary.Traits, &summary.CreatedAt, &summary.UpdatedAt)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, nil

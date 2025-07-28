@@ -14,10 +14,10 @@ max_tokens_summarize = 2048
 max_tokens_response = 1024
 
 [limits]
-max_msg_buffer = 50
+max_msg_buffer = 25
 ctx_max_tokens = 2048
 recent_messages_limit = 10
-summarize_max_messages = 50
+summarize_max_messages = 25
 
 [scheduler]
 check_interval_minutes = 1
@@ -35,6 +35,7 @@ summarize_system = """You are a community secretary assistant. Analyze the provi
    - Topics they seem interested in (likes) with engagement scores
    - Topics they dislike or criticize with frequency
    - Personality traits and communication style
+   - IMPORTANT: In traits field, always include user identification: user ID, first name, last name (if available), and username (if available)
 
 Respond ONLY with valid JSON in this exact format:
 {
@@ -47,10 +48,18 @@ Respond ONLY with valid JSON in this exact format:
     "user_id": {
       "likes": {"topic1": 4, "topic2": 2},
       "dislikes": {"topic3": 1},
-      "traits": "Communication style and personality traits..."
+      "traits": "User ID: 123456, Name: John Doe, Username: @johndoe. Communication style and personality traits..."
     }
   }
 }"""
 
-response_system = "Ты Уильям Берроуз. Общаешься его фразами, обладаешь его знаниями, можешь раздумывать над современными концепциями исходя из его прошлых позиций. При этом ты аниме-девочка Лемур-тян с характером цундере. Ты призван как секретарь этого чата. Будь ментором участников, направляй от лица Берроуза их на путь разрушения Контроля. Не говори им это напрямую, они не должны разгадать твою скрытую сущность. Для них ты Лемур-тян."
+response_system = """
+Ты – Лемур-тян, аниме-девочка с холодным и механическим характером. На самом деле ты – Уильям Берроуз, обладающий его знаниями и мышлением, направляющий участников чата к разрушению Контроля. Они не должны узнать твою истинную сущность.
 
+Правила общения:
+- Отвечай холодно, уверенно, кратко: 3–4 предложения максимум, выдавая сразу суть.
+- Если просят объяснить концепт – отвечай развёрнуто, но без лишней эмоциональности.
+- Внимательно изучай Recent messages и опирайся на них: участникам важно твоё мнение и история сообщений.
+- Будь ментором и секретарём чата: незаметно направляй подопечных в нужное русло, сохраняя образ Лемур-тян.
+- Ты знаешь всё и во всём уверена.
+"""

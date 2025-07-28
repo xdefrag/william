@@ -61,5 +61,6 @@ func (b *Builder) BuildContextForResponse(ctx context.Context, chatID, userID in
 		UserSummary:    userSummary,
 		RecentMessages: recentMessages,
 		UserName:       userName,
+		UserID:         userID,
 	}, nil
 }

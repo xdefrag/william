@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/joho/godotenv"
 	"github.com/pelletier/go-toml/v2"
 )
 
@@ -59,6 +60,9 @@ type Config struct {
 
 // Load reads configuration from environment variables and TOML file
 func Load() (*Config, error) {
+	// Load .env file if it exists (ignore error if file doesn't exist)
+	_ = godotenv.Load()
+
 	// Load app configuration from TOML file
 	appCfg, err := loadAppConfig()
 	if err != nil {

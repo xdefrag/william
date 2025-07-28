@@ -52,14 +52,11 @@ func (s *Summarizer) SummarizeChat(ctx context.Context, chatID int64, maxMessage
 		return fmt.Errorf("failed to summarize with GPT: %w", err)
 	}
 
-	now := time.Now()
-
 	// Save chat summary
 	chatSummary := &models.ChatSummary{
 		ChatID:     chatID,
 		Summary:    response.ChatSummary.Summary,
 		TopicsJSON: make(map[string]interface{}),
-		CreatedAt:  now,
 	}
 
 	// Convert topics to interface{}
@@ -89,7 +86,6 @@ func (s *Summarizer) SummarizeChat(ctx context.Context, chatID int64, maxMessage
 			UserID:       userID,
 			LikesJSON:    make(map[string]interface{}),
 			DislikesJSON: make(map[string]interface{}),
-			CreatedAt:    now,
 		}
 
 		// Convert likes to interface{}

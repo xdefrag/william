@@ -9,4 +9,5 @@ github.com/segmentio/ksuid
 github.com/openai/openai-go
 github.com/stretchr/testify
 github.com/urfave/cli/v2
-github.com/pelletier/go-toml/v2 
+github.com/pelletier/go-toml/v2
+github.com/joho/godotenv 

@@ -27,7 +27,9 @@ func UnmarshalSummarizeEvent(data []byte) (SummarizeEvent, error) {
 type MentionEvent struct {
 	ChatID    int64     `json:"chat_id"`
 	UserID    int64     `json:"user_id"`
-	UserName  string    `json:"user_name"`
+	UserName  string    `json:"user_name"` // First name
+	Username  string    `json:"username"`  // @username (may be empty)
+	LastName  string    `json:"last_name"` // Last name (may be empty)
 	MessageID int64     `json:"message_id"`
 	Text      string    `json:"text"`
 	Timestamp time.Time `json:"timestamp"`

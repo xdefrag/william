@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/ThreeDotsLabs/watermill"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 	"github.com/openai/openai-go/shared"
@@ -16,14 +17,16 @@ import (
 type Client struct {
 	client *openai.Client
 	config *config.Config
+	logger watermill.LoggerAdapter
 }
 
 // New creates a new GPT client
-func New(apiKey string, cfg *config.Config) *Client {
+func New(apiKey string, cfg *config.Config, logger watermill.LoggerAdapter) *Client {
 	client := openai.NewClient(option.WithAPIKey(apiKey))
 	return &Client{
 		client: &client,
 		config: cfg,
+		logger: logger,
 	}
 }
 
@@ -60,20 +63,42 @@ type ContextRequest struct {
 	RecentMessages []*models.Message
 	UserQuery      string
 	UserName       string
+	UserID         int64
 }
 
 // Summarize generates summaries for chat and users
 func (c *Client) Summarize(ctx context.Context, req SummarizeRequest) (*SummarizeResponse, error) {
-	// Build messages content
+	// Build messages content with user identification
 	var messagesText string
 	for _, msg := range req.Messages {
 		if msg.Text != nil {
-			messagesText += fmt.Sprintf("User %d: %s\n", msg.UserID, *msg.Text)
+			// Build user identification string
+			userInfo := fmt.Sprintf("User ID: %d, Name: %s", msg.UserID, msg.UserFirstName)
+
+			if msg.UserLastName != nil && *msg.UserLastName != "" {
+				userInfo += fmt.Sprintf(" %s", *msg.UserLastName)
+			}
+
+			if msg.Username != nil && *msg.Username != "" {
+				userInfo += fmt.Sprintf(", Username: @%s", *msg.Username)
+			}
+
+			messagesText += fmt.Sprintf("%s: %s\n", userInfo, *msg.Text)
 		}
 	}
 
 	systemPrompt := c.config.App.Prompts.SummarizeSystem
 	userPrompt := fmt.Sprintf("Chat ID: %d\n\nMessages:\n%s", req.ChatID, messagesText)
+
+	// Debug log prompts before sending to OpenAI
+	c.logger.Debug("Sending prompts to OpenAI for summarization", watermill.LogFields{
+		"chat_id":       req.ChatID,
+		"system_prompt": systemPrompt,
+		"user_prompt":   userPrompt,
+		"model":         c.config.App.OpenAI.Model,
+		"max_tokens":    c.config.App.OpenAI.MaxTokensSummarize,
+		"temperature":   c.config.App.OpenAI.Temperature,
+	})
 
 	resp, err := c.client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
 		Messages: []openai.ChatCompletionMessageParamUnion{
@@ -146,12 +171,33 @@ func (c *Client) GenerateResponse(ctx context.Context, req ContextRequest) (stri
 		recentContext = "\n\nRecent messages:\n"
 		for _, msg := range req.RecentMessages {
 			if msg.Text != nil {
-				recentContext += fmt.Sprintf("User %d: %s\n", msg.UserID, *msg.Text)
+				// Build user identification string
+				userInfo := fmt.Sprintf("User ID: %d, Name: %s", msg.UserID, msg.UserFirstName)
+
+				if msg.UserLastName != nil && *msg.UserLastName != "" {
+					userInfo += fmt.Sprintf(" %s", *msg.UserLastName)
+				}
+
+				if msg.Username != nil && *msg.Username != "" {
+					userInfo += fmt.Sprintf(", Username: @%s", *msg.Username)
+				}
+
+				recentContext += fmt.Sprintf("%s: %s\n", userInfo, *msg.Text)
 			}
 		}
 	}
 
-	userPrompt := recentContext + "\n\nUser query: " + req.UserQuery
+	userPrompt := recentContext + fmt.Sprintf("\n\nUser query from user ID %d (%s): %s", req.UserID, req.UserName, req.UserQuery)
+
+	// Debug log prompts before sending to OpenAI
+	c.logger.Debug("Sending prompts to OpenAI for response generation", watermill.LogFields{
+		"user_name":     req.UserName,
+		"system_prompt": systemPrompt,
+		"user_prompt":   userPrompt,
+		"model":         c.config.App.OpenAI.Model,
+		"max_tokens":    c.config.App.OpenAI.MaxTokensResponse,
+		"temperature":   c.config.App.OpenAI.Temperature,
+	})
 
 	resp, err := c.client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
 		Messages: []openai.ChatCompletionMessageParamUnion{

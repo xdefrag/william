@@ -91,19 +91,49 @@ func (l *Listener) Start(ctx context.Context) error {
 	}
 }
 
+// getMessageText extracts text from a message, checking both Text and Caption fields
+func (l *Listener) getMessageText(msg *telego.Message) string {
+	if msg.Text != "" {
+		return msg.Text
+	}
+
+	// Check caption if text is empty
+	if msg.Caption != "" {
+		return msg.Caption
+	}
+
+	return ""
+}
+
 // handleMessage processes incoming message
 func (l *Listener) handleMessage(ctx context.Context, msg *telego.Message) {
+	// Get text from either Text or Caption field
+	messageText := l.getMessageText(msg)
+
 	// Skip messages without text or from bots
-	if msg.Text == "" || msg.From.IsBot {
+	if messageText == "" || msg.From.IsBot {
 		return
 	}
 
 	// Create message model
+	var lastName *string
+	if msg.From.LastName != "" {
+		lastName = &msg.From.LastName
+	}
+
+	var username *string
+	if msg.From.Username != "" {
+		username = &msg.From.Username
+	}
+
 	message := &models.Message{
 		TelegramMsgID: int64(msg.MessageID),
 		ChatID:        msg.Chat.ID,
 		UserID:        msg.From.ID,
-		Text:          &msg.Text,
+		UserFirstName: msg.From.FirstName,
+		UserLastName:  lastName,
+		Username:      username,
+		Text:          &messageText,
 		CreatedAt:     time.Now(),
 	}
 
@@ -208,10 +238,24 @@ func (l *Listener) publishSummarizeEvent(ctx context.Context, chatID int64) erro
 
 // publishMentionEvent publishes event to handle mention
 func (l *Listener) publishMentionEvent(ctx context.Context, msg *telego.Message) error {
+	// Build username string
+	username := ""
+	if msg.From.Username != "" {
+		username = msg.From.Username
+	}
+
+	// Build last name string
+	lastName := ""
+	if msg.From.LastName != "" {
+		lastName = msg.From.LastName
+	}
+
 	event := MentionEvent{
 		ChatID:    msg.Chat.ID,
 		UserID:    msg.From.ID,
 		UserName:  msg.From.FirstName,
+		Username:  username,
+		LastName:  lastName,
 		MessageID: int64(msg.MessageID),
 		Text:      msg.Text,
 		Timestamp: time.Now(),
