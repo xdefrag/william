@@ -34,6 +34,7 @@ summarize_system = """You are a community secretary assistant. Analyze the provi
 2. User profiles for each participant with:
    - Topics they seem interested in (likes) with engagement scores
    - Topics they dislike or criticize with frequency
+   - Areas of expertise and competencies with proficiency scores
    - Personality traits and communication style
    - IMPORTANT: In traits field, always include user identification: user ID, first name, last name (if available), and username (if available)
 
@@ -48,6 +49,7 @@ Respond ONLY with valid JSON in this exact format:
     "user_id": {
       "likes": {"topic1": 4, "topic2": 2},
       "dislikes": {"topic3": 1},
+      "competencies": {"programming": 5, "design": 3, "management": 2},
       "traits": "User ID: 123456, Name: John Doe, Username: @johndoe. Communication style and personality traits..."
     }
   }

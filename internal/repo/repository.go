@@ -167,12 +167,13 @@ func (r *Repository) GetLatestChatSummary(ctx context.Context, chatID int64) (*m
 
 func (r *Repository) SaveUserSummary(ctx context.Context, summary *models.UserSummary) error {
 	query := `
-		INSERT INTO user_summaries (chat_id, user_id, likes_json, dislikes_json, traits, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		INSERT INTO user_summaries (chat_id, user_id, likes_json, dislikes_json, competencies_json, traits, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		ON CONFLICT (chat_id, user_id) 
 		DO UPDATE SET 
 			likes_json = EXCLUDED.likes_json,
 			dislikes_json = EXCLUDED.dislikes_json,
+			competencies_json = EXCLUDED.competencies_json,
 			traits = EXCLUDED.traits,
 			updated_at = EXCLUDED.updated_at
 		RETURNING id`
@@ -187,18 +188,23 @@ func (r *Repository) SaveUserSummary(ctx context.Context, summary *models.UserSu
 		return fmt.Errorf("failed to marshal dislikes JSON: %w", err)
 	}
 
+	competenciesJSON, err := json.Marshal(summary.CompetenciesJSON)
+	if err != nil {
+		return fmt.Errorf("failed to marshal competencies JSON: %w", err)
+	}
+
 	now := time.Now()
 	summary.UpdatedAt = now
 	if summary.CreatedAt.IsZero() {
 		summary.CreatedAt = now
 	}
 
-	return r.pool.QueryRow(ctx, query, summary.ChatID, summary.UserID, likesJSON, dislikesJSON, summary.Traits, summary.CreatedAt, summary.UpdatedAt).Scan(&summary.ID)
+	return r.pool.QueryRow(ctx, query, summary.ChatID, summary.UserID, likesJSON, dislikesJSON, competenciesJSON, summary.Traits, summary.CreatedAt, summary.UpdatedAt).Scan(&summary.ID)
 }
 
 func (r *Repository) GetLatestUserSummary(ctx context.Context, chatID, userID int64) (*models.UserSummary, error) {
 	query := `
-		SELECT id, chat_id, user_id, likes_json, dislikes_json, traits, created_at, updated_at
+		SELECT id, chat_id, user_id, likes_json, dislikes_json, competencies_json, traits, created_at, updated_at
 		FROM user_summaries 
 		WHERE chat_id = $1 AND user_id = $2 
 		ORDER BY updated_at DESC 
@@ -207,9 +213,9 @@ func (r *Repository) GetLatestUserSummary(ctx context.Context, chatID, userID in
 	row := r.pool.QueryRow(ctx, query, chatID, userID)
 
 	summary := &models.UserSummary{}
-	var likesJSON, dislikesJSON []byte
+	var likesJSON, dislikesJSON, competenciesJSON []byte
 
-	err := row.Scan(&summary.ID, &summary.ChatID, &summary.UserID, &likesJSON, &dislikesJSON, &summary.Traits, &summary.CreatedAt, &summary.UpdatedAt)
+	err := row.Scan(&summary.ID, &summary.ChatID, &summary.UserID, &likesJSON, &dislikesJSON, &competenciesJSON, &summary.Traits, &summary.CreatedAt, &summary.UpdatedAt)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, nil
@@ -223,6 +229,10 @@ func (r *Repository) GetLatestUserSummary(ctx context.Context, chatID, userID in
 
 	if err := json.Unmarshal(dislikesJSON, &summary.DislikesJSON); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal dislikes JSON: %w", err)
+	}
+
+	if err := json.Unmarshal(competenciesJSON, &summary.CompetenciesJSON); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal competencies JSON: %w", err)
 	}
 
 	return summary, nil

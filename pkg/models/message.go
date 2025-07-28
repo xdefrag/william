@@ -28,12 +28,13 @@ type ChatSummary struct {
 
 // UserSummary represents user behavior analysis
 type UserSummary struct {
-	ID           int64                  `json:"id" db:"id"`
-	ChatID       int64                  `json:"chat_id" db:"chat_id"`
-	UserID       int64                  `json:"user_id" db:"user_id"`
-	LikesJSON    map[string]interface{} `json:"likes_json" db:"likes_json"`
-	DislikesJSON map[string]interface{} `json:"dislikes_json" db:"dislikes_json"`
-	Traits       *string                `json:"traits" db:"traits"`
-	CreatedAt    time.Time              `json:"created_at" db:"created_at"`
-	UpdatedAt    time.Time              `json:"updated_at" db:"updated_at"`
+	ID               int64                  `json:"id" db:"id"`
+	ChatID           int64                  `json:"chat_id" db:"chat_id"`
+	UserID           int64                  `json:"user_id" db:"user_id"`
+	LikesJSON        map[string]interface{} `json:"likes_json" db:"likes_json"`
+	DislikesJSON     map[string]interface{} `json:"dislikes_json" db:"dislikes_json"`
+	CompetenciesJSON map[string]interface{} `json:"competencies_json" db:"competencies_json"`
+	Traits           *string                `json:"traits" db:"traits"`
+	CreatedAt        time.Time              `json:"created_at" db:"created_at"`
+	UpdatedAt        time.Time              `json:"updated_at" db:"updated_at"`
 }

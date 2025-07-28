@@ -82,10 +82,11 @@ func (s *Summarizer) SummarizeChat(ctx context.Context, chatID int64, maxMessage
 		}
 
 		userSummary := &models.UserSummary{
-			ChatID:       chatID,
-			UserID:       userID,
-			LikesJSON:    make(map[string]interface{}),
-			DislikesJSON: make(map[string]interface{}),
+			ChatID:           chatID,
+			UserID:           userID,
+			LikesJSON:        make(map[string]interface{}),
+			DislikesJSON:     make(map[string]interface{}),
+			CompetenciesJSON: make(map[string]interface{}),
 		}
 
 		// Convert likes to interface{}
@@ -96,6 +97,11 @@ func (s *Summarizer) SummarizeChat(ctx context.Context, chatID int64, maxMessage
 		// Convert dislikes to interface{}
 		for topic, score := range profile.Dislikes {
 			userSummary.DislikesJSON[topic] = score
+		}
+
+		// Convert competencies to interface{}
+		for topic, score := range profile.Competencies {
+			userSummary.CompetenciesJSON[topic] = score
 		}
 
 		// Add traits if present

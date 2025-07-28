@@ -51,9 +51,10 @@ type ChatSummaryData struct {
 
 // UserProfileData contains user-level profile information
 type UserProfileData struct {
-	Likes    map[string]int `json:"likes"`
-	Dislikes map[string]int `json:"dislikes"`
-	Traits   string         `json:"traits"`
+	Likes        map[string]int `json:"likes"`
+	Dislikes     map[string]int `json:"dislikes"`
+	Competencies map[string]int `json:"competencies"`
+	Traits       string         `json:"traits"`
 }
 
 // ContextRequest represents request for context-aware response
@@ -158,6 +159,11 @@ func (c *Client) GenerateResponse(ctx context.Context, req ContextRequest) (stri
 		if len(req.UserSummary.DislikesJSON) > 0 {
 			dislikesJSON, _ := json.Marshal(req.UserSummary.DislikesJSON)
 			systemPrompt += fmt.Sprintf("\nDislikes: %s", string(dislikesJSON))
+		}
+
+		if len(req.UserSummary.CompetenciesJSON) > 0 {
+			competenciesJSON, _ := json.Marshal(req.UserSummary.CompetenciesJSON)
+			systemPrompt += fmt.Sprintf("\nCompetencies: %s", string(competenciesJSON))
 		}
 
 		if req.UserSummary.Traits != nil {
