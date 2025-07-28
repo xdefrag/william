@@ -54,5 +54,5 @@ tmp/
 *.log
 
 # William specific
-william
-william.exe 
+/william
+/william.exe 
