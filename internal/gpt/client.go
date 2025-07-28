@@ -22,7 +22,10 @@ type Client struct {
 
 // New creates a new GPT client
 func New(apiKey string, cfg *config.Config, logger *slog.Logger) *Client {
-	client := openai.NewClient(option.WithAPIKey(apiKey))
+	client := openai.NewClient(
+		option.WithAPIKey(apiKey),
+		option.WithMaxRetries(0), // Disable automatic retries to prevent unnecessary API costs
+	)
 	return &Client{
 		client: &client,
 		config: cfg,
