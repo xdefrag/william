@@ -33,20 +33,11 @@ WORKDIR /app
 # Copy binary from builder stage
 COPY --from=builder /app/william .
 
-# Copy migrations
-COPY --from=builder /app/migrations ./migrations
-
 # Copy config directory
 COPY --from=builder /app/config ./config
 
 # Copy allowed modules list
 COPY --from=builder /app/allowed-mods.txt .
-
-# Install goose for migrations
-RUN apk add --no-cache curl && \
-    curl -L https://github.com/pressly/goose/releases/latest/download/goose_linux_x86_64 -o /usr/local/bin/goose && \
-    chmod +x /usr/local/bin/goose && \
-    apk del curl
 
 # Change ownership to app user
 RUN chown -R appuser:appuser /app
@@ -57,5 +48,5 @@ USER appuser
 # Expose port (if needed for health checks)
 EXPOSE 8080
 
-# Run migrations and start application
+# Run application (migrations run automatically on startup)
 CMD ["./william"] 

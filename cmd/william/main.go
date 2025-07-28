@@ -14,13 +14,16 @@ import (
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/ThreeDotsLabs/watermill/pubsub/gochannel"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/mymmrac/telego"
 	"github.com/samber/do"
 	"github.com/xdefrag/william/internal/bot"
 	"github.com/xdefrag/william/internal/config"
 	williamcontext "github.com/xdefrag/william/internal/context"
 	"github.com/xdefrag/william/internal/gpt"
+	"github.com/xdefrag/william/internal/migrations"
 	"github.com/xdefrag/william/internal/repo"
 	"github.com/xdefrag/william/internal/scheduler"
 )
@@ -172,6 +175,27 @@ func setupDependencies(injector *do.Injector, cfg *config.Config, logger watermi
 		config := do.MustInvoke[*config.Config](i)
 		logger := do.MustInvoke[watermill.LoggerAdapter](i)
 
+		// Parse connection config for migrations
+		pgxConfig, err := pgx.ParseConfig(config.PostgresDSN)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse database config: %w", err)
+		}
+
+		// Create database/sql connection for migrations
+		sqlDB := stdlib.OpenDB(*pgxConfig)
+
+		// Run migrations
+		if err := migrations.Run(context.Background(), sqlDB); err != nil {
+			sqlDB.Close()
+			return nil, fmt.Errorf("failed to run migrations: %w", err)
+		}
+
+		logger.Info("Database migrations completed successfully", nil)
+
+		// Close sql connection after migrations
+		sqlDB.Close()
+
+		// Create pgxpool connection for application use
 		pool, err := pgxpool.New(context.Background(), config.PostgresDSN)
 		if err != nil {
 			return nil, fmt.Errorf("failed to connect to database: %w", err)
