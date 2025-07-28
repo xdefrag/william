@@ -35,8 +35,10 @@ func New(apiKey string, cfg *config.Config, logger *slog.Logger) *Client {
 
 // SummarizeRequest represents request for summarization
 type SummarizeRequest struct {
-	ChatID   int64
-	Messages []*models.Message
+	ChatID                int64
+	Messages              []*models.Message
+	ExistingChatSummary   *models.ChatSummary
+	ExistingUserSummaries map[int64]*models.UserSummary // userID -> UserSummary
 }
 
 // SummarizeResponse represents the structured response from GPT for summarization
@@ -92,7 +94,56 @@ func (c *Client) Summarize(ctx context.Context, req SummarizeRequest) (*Summariz
 	}
 
 	systemPrompt := c.config.App.Prompts.SummarizeSystem
-	userPrompt := fmt.Sprintf("Chat ID: %d\n\nMessages:\n%s", req.ChatID, messagesText)
+
+	// Build enhanced user prompt with existing data
+	userPrompt := fmt.Sprintf("Chat ID: %d\n\n", req.ChatID)
+
+	// Add existing chat summary if available
+	if req.ExistingChatSummary != nil {
+		userPrompt += "EXISTING CHAT SUMMARY:\n"
+		userPrompt += fmt.Sprintf("Summary: %s\n", req.ExistingChatSummary.Summary)
+
+		if len(req.ExistingChatSummary.TopicsJSON) > 0 {
+			topicsJSON, _ := json.Marshal(req.ExistingChatSummary.TopicsJSON)
+			userPrompt += fmt.Sprintf("Topics: %s\n", string(topicsJSON))
+		}
+
+		if req.ExistingChatSummary.NextEvents != nil {
+			userPrompt += fmt.Sprintf("Next events: %s\n", *req.ExistingChatSummary.NextEvents)
+		}
+		userPrompt += "\n"
+	}
+
+	// Add existing user summaries if available
+	if len(req.ExistingUserSummaries) > 0 {
+		userPrompt += "EXISTING USER PROFILES:\n"
+		for userID, summary := range req.ExistingUserSummaries {
+			userPrompt += fmt.Sprintf("User ID %d:\n", userID)
+
+			if len(summary.LikesJSON) > 0 {
+				likesJSON, _ := json.Marshal(summary.LikesJSON)
+				userPrompt += fmt.Sprintf("  Likes: %s\n", string(likesJSON))
+			}
+
+			if len(summary.DislikesJSON) > 0 {
+				dislikesJSON, _ := json.Marshal(summary.DislikesJSON)
+				userPrompt += fmt.Sprintf("  Dislikes: %s\n", string(dislikesJSON))
+			}
+
+			if len(summary.CompetenciesJSON) > 0 {
+				competenciesJSON, _ := json.Marshal(summary.CompetenciesJSON)
+				userPrompt += fmt.Sprintf("  Competencies: %s\n", string(competenciesJSON))
+			}
+
+			if summary.Traits != nil {
+				userPrompt += fmt.Sprintf("  Traits: %s\n", *summary.Traits)
+			}
+			userPrompt += "\n"
+		}
+	}
+
+	userPrompt += fmt.Sprintf("NEW MESSAGES:\n%s\n", messagesText)
+	userPrompt += "IMPORTANT: Update and enhance the existing data with new information from the messages. Do not replace existing data, but merge and improve it."
 
 	// Debug log prompts before sending to OpenAI
 	c.logger.DebugContext(ctx, "Sending prompts to OpenAI for summarization",

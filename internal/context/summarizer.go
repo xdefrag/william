@@ -3,6 +3,7 @@ package context
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"time"
 
@@ -16,13 +17,15 @@ import (
 type Summarizer struct {
 	repo      *repo.Repository
 	gptClient *gpt.Client
+	logger    *slog.Logger
 }
 
 // NewSummarizer creates a new summarizer
-func NewSummarizer(repo *repo.Repository, gptClient *gpt.Client) *Summarizer {
+func NewSummarizer(repo *repo.Repository, gptClient *gpt.Client, logger *slog.Logger) *Summarizer {
 	return &Summarizer{
 		repo:      repo,
 		gptClient: gptClient,
+		logger:    logger.WithGroup("summarizer"),
 	}
 }
 
@@ -41,10 +44,38 @@ func (s *Summarizer) SummarizeChat(ctx context.Context, chatID int64, maxMessage
 	// Reverse messages to chronological order
 	lo.Reverse(messages)
 
-	// Call GPT for summarization
+	// Get existing chat summary
+	existingChatSummary, err := s.repo.GetLatestChatSummary(ctx, chatID)
+	if err != nil {
+		return fmt.Errorf("failed to get existing chat summary: %w", err)
+	}
+
+	// Get unique user IDs from messages
+	userIDs := make(map[int64]bool)
+	for _, msg := range messages {
+		userIDs[msg.UserID] = true
+	}
+
+	// Get existing user summaries for all users in the messages
+	existingUserSummaries := make(map[int64]*models.UserSummary)
+	for userID := range userIDs {
+		userSummary, err := s.repo.GetLatestUserSummary(ctx, chatID, userID)
+		if err != nil {
+			// Log error but continue - missing user summary is not critical
+			s.logger.Error("Failed to get user summary for user", slog.Int64("user_id", userID), slog.Int64("chat_id", chatID), slog.String("error", err.Error()))
+			continue
+		}
+		if userSummary != nil {
+			existingUserSummaries[userID] = userSummary
+		}
+	}
+
+	// Call GPT for summarization with existing data
 	req := gpt.SummarizeRequest{
-		ChatID:   chatID,
-		Messages: messages,
+		ChatID:                chatID,
+		Messages:              messages,
+		ExistingChatSummary:   existingChatSummary,
+		ExistingUserSummaries: existingUserSummaries,
 	}
 
 	response, err := s.gptClient.Summarize(ctx, req)
@@ -128,7 +159,7 @@ func (s *Summarizer) SummarizeAllActiveChats(ctx context.Context, since time.Tim
 	for _, chatID := range chatIDs {
 		if err := s.SummarizeChat(ctx, chatID, maxMessages); err != nil {
 			// Log error but continue with other chats
-			fmt.Printf("Failed to summarize chat %d: %v\n", chatID, err)
+			s.logger.Error("Failed to summarize chat", slog.Int64("chat_id", chatID), slog.String("error", err.Error()))
 		}
 	}
 

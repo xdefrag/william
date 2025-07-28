@@ -254,7 +254,8 @@ func setupDependencies(injector *do.Injector, cfg *config.Config, logger watermi
 	do.Provide(injector, func(i *do.Injector) (*williamcontext.Summarizer, error) {
 		repository := do.MustInvoke[*repo.Repository](i)
 		gptClient := do.MustInvoke[*gpt.Client](i)
-		return williamcontext.NewSummarizer(repository, gptClient), nil
+		logger := do.MustInvoke[*slog.Logger](i)
+		return williamcontext.NewSummarizer(repository, gptClient, logger), nil
 	})
 
 	// Register Telegram bot
