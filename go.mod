@@ -4,7 +4,6 @@ go 1.24.5
 
 require (
 	github.com/ThreeDotsLabs/watermill v1.4.7
-	github.com/davecgh/go-spew v1.1.1
 	github.com/jackc/pgx/v5 v5.7.4
 	github.com/joho/godotenv v1.5.1
 	github.com/mymmrac/telego v1.2.0

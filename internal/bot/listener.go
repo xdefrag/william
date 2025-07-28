@@ -3,6 +3,7 @@ package bot
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -51,37 +52,36 @@ type Listener struct {
 	config    *config.Config
 	publisher message.Publisher
 	counters  *MessageCounters
-	logger    watermill.LoggerAdapter
+	logger    *slog.Logger
 }
 
 // New creates a new bot listener
-func New(bot *telego.Bot, repo *repo.Repository, cfg *config.Config, publisher message.Publisher, logger watermill.LoggerAdapter) *Listener {
+func New(bot *telego.Bot, repo *repo.Repository, cfg *config.Config, publisher message.Publisher, logger *slog.Logger) *Listener {
 	return &Listener{
 		bot:       bot,
 		repo:      repo,
 		config:    cfg,
 		publisher: publisher,
 		counters:  NewMessageCounters(),
-		logger:    logger,
+		logger:    logger.WithGroup("bot.listener"),
 	}
 }
 
 // Start starts listening to Telegram updates
 func (l *Listener) Start(ctx context.Context) error {
+	l.logger.InfoContext(ctx, "Bot listener started",
+		slog.Bool("bot_ready", true),
+	)
+
 	updates, err := l.bot.UpdatesViaLongPolling(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("failed to start long polling: %w", err)
+		return fmt.Errorf("failed to get updates channel: %w", err)
 	}
-
-	l.logger.Info("Bot listener started", watermill.LogFields{
-		"max_msg_buffer": l.config.App.Limits.MaxMsgBuffer,
-	})
 
 	for {
 		select {
 		case <-ctx.Done():
-			l.logger.Info("Stopping bot listener", nil)
-			// Stop is automatic when context is cancelled
+			l.logger.InfoContext(ctx, "Stopping bot listener")
 			return nil
 		case update := <-updates:
 			if update.Message != nil {
@@ -139,10 +139,10 @@ func (l *Listener) handleMessage(ctx context.Context, msg *telego.Message) {
 
 	// Save message to database
 	if err := l.repo.SaveMessage(ctx, message); err != nil {
-		l.logger.Error("Failed to save message", err, watermill.LogFields{
-			"chat_id": msg.Chat.ID,
-			"user_id": msg.From.ID,
-		})
+		l.logger.ErrorContext(ctx, "Failed to save message", slog.Any("error", err),
+			slog.Int64("chat_id", msg.Chat.ID),
+			slog.Int64("user_id", msg.From.ID),
+		)
 		return
 	}
 
@@ -156,28 +156,28 @@ func (l *Listener) handleMessage(ctx context.Context, msg *telego.Message) {
 
 	// Increment message counter and check if we need to summarize
 	count := l.counters.Increment(msg.Chat.ID)
-	l.logger.Info("Message counter incremented", watermill.LogFields{
-		"chat_id": msg.Chat.ID,
-		"count":   count,
-		"limit":   l.config.App.Limits.MaxMsgBuffer,
-	})
+	l.logger.InfoContext(ctx, "Message counter incremented",
+		slog.Int64("chat_id", msg.Chat.ID),
+		slog.Int("count", count),
+		slog.Int("limit", l.config.App.Limits.MaxMsgBuffer),
+	)
 
 	if count >= l.config.App.Limits.MaxMsgBuffer {
 		// Reset counter and trigger summarization
 		l.counters.Reset(msg.Chat.ID)
-		l.logger.Info("Triggering summarization", watermill.LogFields{
-			"chat_id": msg.Chat.ID,
-		})
+		l.logger.InfoContext(ctx, "Triggering summarization",
+			slog.Int64("chat_id", msg.Chat.ID),
+		)
 
 		// Publish summarization event
 		if err := l.publishSummarizeEvent(ctx, msg.Chat.ID); err != nil {
-			l.logger.Error("Failed to publish summarize event", err, watermill.LogFields{
-				"chat_id": msg.Chat.ID,
-			})
+			l.logger.ErrorContext(ctx, "Failed to publish summarize event", slog.Any("error", err),
+				slog.Int64("chat_id", msg.Chat.ID),
+			)
 		} else {
-			l.logger.Info("Summarize event published successfully", watermill.LogFields{
-				"chat_id": msg.Chat.ID,
-			})
+			l.logger.InfoContext(ctx, "Summarize event published successfully",
+				slog.Int64("chat_id", msg.Chat.ID),
+			)
 		}
 	}
 }
@@ -200,7 +200,10 @@ func (l *Listener) isMentionOrReply(msg *telego.Message) bool {
 		ctx := context.Background()
 		botInfo, err := l.bot.GetMe(ctx)
 		if err != nil {
-			l.logger.Error("Failed to get bot info", err, nil)
+			l.logger.ErrorContext(ctx, "Failed to get bot info", slog.Any("error", err),
+				slog.Int64("chat_id", msg.Chat.ID),
+				slog.Int64("user_id", msg.From.ID),
+			)
 			return false
 		}
 		return msg.ReplyToMessage.From.IsBot && msg.ReplyToMessage.From.Username == botInfo.Username
@@ -213,10 +216,10 @@ func (l *Listener) isMentionOrReply(msg *telego.Message) bool {
 func (l *Listener) handleMention(ctx context.Context, msg *telego.Message) {
 	// Publish mention event for handler to process
 	if err := l.publishMentionEvent(ctx, msg); err != nil {
-		l.logger.Error("Failed to publish mention event", err, watermill.LogFields{
-			"chat_id": msg.Chat.ID,
-			"user_id": msg.From.ID,
-		})
+		l.logger.ErrorContext(ctx, "Failed to publish mention event", slog.Any("error", err),
+			slog.Int64("chat_id", msg.Chat.ID),
+			slog.Int64("user_id", msg.From.ID),
+		)
 	}
 }
 
@@ -280,5 +283,5 @@ func (l *Listener) ResetCountersForAllChats() {
 		l.counters.counters[chatID] = 0
 	}
 
-	l.logger.Info("Reset message counters for all chats", nil)
+	l.logger.InfoContext(context.Background(), "Reset message counters for all chats")
 }

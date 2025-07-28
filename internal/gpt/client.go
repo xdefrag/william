@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 
-	"github.com/ThreeDotsLabs/watermill"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 	"github.com/openai/openai-go/shared"
@@ -17,16 +17,16 @@ import (
 type Client struct {
 	client *openai.Client
 	config *config.Config
-	logger watermill.LoggerAdapter
+	logger *slog.Logger
 }
 
 // New creates a new GPT client
-func New(apiKey string, cfg *config.Config, logger watermill.LoggerAdapter) *Client {
+func New(apiKey string, cfg *config.Config, logger *slog.Logger) *Client {
 	client := openai.NewClient(option.WithAPIKey(apiKey))
 	return &Client{
 		client: &client,
 		config: cfg,
-		logger: logger,
+		logger: logger.WithGroup("gpt"),
 	}
 }
 
@@ -92,12 +92,12 @@ func (c *Client) Summarize(ctx context.Context, req SummarizeRequest) (*Summariz
 	userPrompt := fmt.Sprintf("Chat ID: %d\n\nMessages:\n%s", req.ChatID, messagesText)
 
 	// Debug log prompts before sending to OpenAI
-	c.logger.Debug("Sending prompts to OpenAI for summarization", watermill.LogFields{
-		"chat_id":     req.ChatID,
-		"model":       c.config.App.OpenAI.Model,
-		"max_tokens":  c.config.App.OpenAI.MaxTokensSummarize,
-		"temperature": c.config.App.OpenAI.Temperature,
-	})
+	c.logger.DebugContext(ctx, "Sending prompts to OpenAI for summarization",
+		slog.Int64("chat_id", req.ChatID),
+		slog.String("model", c.config.App.OpenAI.Model),
+		slog.Int("max_tokens", c.config.App.OpenAI.MaxTokensSummarize),
+		slog.Float64("temperature", c.config.App.OpenAI.Temperature),
+	)
 
 	resp, err := c.client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
 		Messages: []openai.ChatCompletionMessageParamUnion{
@@ -194,12 +194,12 @@ func (c *Client) GenerateResponse(ctx context.Context, req ContextRequest) (stri
 	userPrompt := recentContext + fmt.Sprintf("\n\nUser query from user ID %d (%s): %s", req.UserID, req.UserName, req.UserQuery)
 
 	// Debug log prompts before sending to OpenAI
-	c.logger.Debug("Sending prompts to OpenAI for response generation", watermill.LogFields{
-		"user_name":   req.UserName,
-		"model":       c.config.App.OpenAI.Model,
-		"max_tokens":  c.config.App.OpenAI.MaxTokensResponse,
-		"temperature": c.config.App.OpenAI.Temperature,
-	})
+	c.logger.DebugContext(ctx, "Sending prompts to OpenAI for response generation",
+		slog.String("user_name", req.UserName),
+		slog.String("model", c.config.App.OpenAI.Model),
+		slog.Int("max_tokens", c.config.App.OpenAI.MaxTokensResponse),
+		slog.Float64("temperature", c.config.App.OpenAI.Temperature),
+	)
 
 	resp, err := c.client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
 		Messages: []openai.ChatCompletionMessageParamUnion{

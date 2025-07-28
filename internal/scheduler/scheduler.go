@@ -3,6 +3,7 @@ package scheduler
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/ThreeDotsLabs/watermill"
@@ -17,7 +18,7 @@ type Scheduler struct {
 	publisher message.Publisher
 	listener  *bot.Listener
 	config    *config.Config
-	logger    watermill.LoggerAdapter
+	logger    *slog.Logger
 
 	// Channel to stop the scheduler
 	stopCh chan struct{}
@@ -28,20 +29,20 @@ func New(
 	publisher message.Publisher,
 	listener *bot.Listener,
 	config *config.Config,
-	logger watermill.LoggerAdapter,
+	logger *slog.Logger,
 ) *Scheduler {
 	return &Scheduler{
 		publisher: publisher,
 		listener:  listener,
 		config:    config,
-		logger:    logger,
+		logger:    logger.WithGroup("scheduler"),
 		stopCh:    make(chan struct{}),
 	}
 }
 
 // Start starts the scheduler with midnight cron job
 func (s *Scheduler) Start(ctx context.Context) error {
-	s.logger.Info("Starting scheduler", nil)
+	s.logger.InfoContext(ctx, "Starting scheduler")
 
 	// Start midnight scheduler goroutine
 	go s.runMidnightScheduler(ctx)
@@ -49,10 +50,10 @@ func (s *Scheduler) Start(ctx context.Context) error {
 	// Wait for context cancellation or stop signal
 	select {
 	case <-ctx.Done():
-		s.logger.Info("Scheduler context cancelled", nil)
+		s.logger.InfoContext(ctx, "Scheduler context cancelled")
 		return nil
 	case <-s.stopCh:
-		s.logger.Info("Scheduler stopped", nil)
+		s.logger.InfoContext(ctx, "Scheduler stopped")
 		return nil
 	}
 }
@@ -64,8 +65,7 @@ func (s *Scheduler) Stop() {
 
 // runMidnightScheduler runs the midnight scheduler
 func (s *Scheduler) runMidnightScheduler(ctx context.Context) {
-	interval := time.Duration(s.config.App.Scheduler.CheckIntervalMinutes) * time.Minute
-	ticker := time.NewTicker(interval)
+	ticker := time.NewTicker(time.Minute) // Check every minute
 	defer ticker.Stop()
 
 	for {
@@ -75,20 +75,23 @@ func (s *Scheduler) runMidnightScheduler(ctx context.Context) {
 		case <-s.stopCh:
 			return
 		case now := <-ticker.C:
-			// Check if it's midnight in the configured timezone
-			localTime := now.In(s.config.Location)
-			if s.isMidnight(localTime) {
-				s.logger.Info("Midnight reached, triggering events", watermill.LogFields{
-					"time": localTime.Format("2006-01-02 15:04:05"),
-				})
+			// Check if it's midnight (00:00)
+			if now.Hour() == 0 && now.Minute() == 0 {
+				s.logger.InfoContext(ctx, "Midnight reached, triggering events",
+					slog.Time("timestamp", now),
+				)
 
-				// Reset message counters
-				s.listener.ResetCountersForAllChats()
-
-				// Publish midnight event for summarization
-				if err := s.publishMidnightEvent(ctx, localTime); err != nil {
-					s.logger.Error("Failed to publish midnight event", err, nil)
+				// Publish midnight event
+				event := bot.MidnightEvent{
+					TriggeredAt: now,
 				}
+
+				if err := s.publishMidnightEvent(ctx, event); err != nil {
+					s.logger.ErrorContext(ctx, "Failed to publish midnight event", slog.Any("error", err))
+				}
+
+				// Reset counters after publishing event
+				s.listener.ResetCountersForAllChats()
 			}
 		}
 	}
@@ -100,11 +103,7 @@ func (s *Scheduler) isMidnight(t time.Time) bool {
 }
 
 // publishMidnightEvent publishes midnight event
-func (s *Scheduler) publishMidnightEvent(ctx context.Context, timestamp time.Time) error {
-	event := bot.MidnightEvent{
-		Timestamp: timestamp,
-	}
-
+func (s *Scheduler) publishMidnightEvent(ctx context.Context, event bot.MidnightEvent) error {
 	msgData, err := event.Marshal()
 	if err != nil {
 		return fmt.Errorf("failed to marshal midnight event: %w", err)
@@ -120,7 +119,7 @@ func RegisterDI(container *do.Injector) {
 		publisher := do.MustInvoke[message.Publisher](i)
 		listener := do.MustInvoke[*bot.Listener](i)
 		config := do.MustInvoke[*config.Config](i)
-		logger := do.MustInvoke[watermill.LoggerAdapter](i)
+		logger := do.MustInvoke[*slog.Logger](i)
 
 		return New(publisher, listener, config, logger), nil
 	})

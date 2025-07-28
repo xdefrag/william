@@ -32,6 +32,7 @@ type MentionEvent struct {
 	LastName  string    `json:"last_name"` // Last name (may be empty)
 	MessageID int64     `json:"message_id"`
 	Text      string    `json:"text"`
+	UserQuery string    `json:"user_query"` // Extracted user query from text
 	Timestamp time.Time `json:"timestamp"`
 }
 
@@ -49,7 +50,7 @@ func UnmarshalMentionEvent(data []byte) (MentionEvent, error) {
 
 // MidnightEvent represents daily midnight reset event
 type MidnightEvent struct {
-	Timestamp time.Time `json:"timestamp"`
+	TriggeredAt time.Time `json:"triggered_at"`
 }
 
 // Marshal serializes the event to JSON

@@ -32,6 +32,7 @@ William is a Telegram bot powered by ChatGPT (gpt-4o) that serves as a secretary
 
 ## Technology Stack
 - **Language**: Go 1.24+ (strict version compliance)
+- **Logging**: Standard library slog/log with structured logging
 - **Telegram**: Telego v1.2.0
 - **AI**: OpenAI GPT-4o (v1.8.2 - fixed version!)
 - **Database**: PostgreSQL 15 with pgx/v5
@@ -68,6 +69,7 @@ William is a Telegram bot powered by ChatGPT (gpt-4o) that serves as a secretary
 
 ## Technology Stack
 - **Language**: Go 1.24+ (strict version compliance)
+- **Logging**: Standard library slog/log with structured logging
 - **Telegram**: Telego v1.2.0
 - **AI**: OpenAI GPT-4o (v1.8.2 - fixed version!)
 - **Database**: PostgreSQL 15 with pgx/v5
