@@ -93,12 +93,10 @@ func (c *Client) Summarize(ctx context.Context, req SummarizeRequest) (*Summariz
 
 	// Debug log prompts before sending to OpenAI
 	c.logger.Debug("Sending prompts to OpenAI for summarization", watermill.LogFields{
-		"chat_id":       req.ChatID,
-		"system_prompt": systemPrompt,
-		"user_prompt":   userPrompt,
-		"model":         c.config.App.OpenAI.Model,
-		"max_tokens":    c.config.App.OpenAI.MaxTokensSummarize,
-		"temperature":   c.config.App.OpenAI.Temperature,
+		"chat_id":     req.ChatID,
+		"model":       c.config.App.OpenAI.Model,
+		"max_tokens":  c.config.App.OpenAI.MaxTokensSummarize,
+		"temperature": c.config.App.OpenAI.Temperature,
 	})
 
 	resp, err := c.client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
@@ -197,12 +195,10 @@ func (c *Client) GenerateResponse(ctx context.Context, req ContextRequest) (stri
 
 	// Debug log prompts before sending to OpenAI
 	c.logger.Debug("Sending prompts to OpenAI for response generation", watermill.LogFields{
-		"user_name":     req.UserName,
-		"system_prompt": systemPrompt,
-		"user_prompt":   userPrompt,
-		"model":         c.config.App.OpenAI.Model,
-		"max_tokens":    c.config.App.OpenAI.MaxTokensResponse,
-		"temperature":   c.config.App.OpenAI.Temperature,
+		"user_name":   req.UserName,
+		"model":       c.config.App.OpenAI.Model,
+		"max_tokens":  c.config.App.OpenAI.MaxTokensResponse,
+		"temperature": c.config.App.OpenAI.Temperature,
 	})
 
 	resp, err := c.client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
