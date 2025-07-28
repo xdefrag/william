@@ -115,6 +115,23 @@ func (l *Listener) handleMessage(ctx context.Context, msg *telego.Message) {
 		return
 	}
 
+	// Check if chat is allowed
+	isAllowed, err := l.repo.IsAllowedChat(ctx, msg.Chat.ID)
+	if err != nil {
+		l.logger.ErrorContext(ctx, "Failed to check allowed chat", slog.Any("error", err),
+			slog.Int64("chat_id", msg.Chat.ID),
+		)
+		return
+	}
+
+	if !isAllowed {
+		l.logger.DebugContext(ctx, "Message from non-allowed chat ignored",
+			slog.Int64("chat_id", msg.Chat.ID),
+			slog.String("chat_type", msg.Chat.Type),
+		)
+		return
+	}
+
 	// Create message model
 	var lastName *string
 	if msg.From.LastName != "" {

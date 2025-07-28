@@ -262,3 +262,68 @@ func (r *Repository) GetActiveChatIDs(ctx context.Context, since time.Time) ([]i
 
 	return chatIDs, rows.Err()
 }
+
+// Allowed chats operations
+
+// IsAllowedChat checks if the given chat ID is in the allowed chats list
+func (r *Repository) IsAllowedChat(ctx context.Context, chatID int64) (bool, error) {
+	// Compare absolute values to ignore minus signs in Telegram chat IDs
+	query := `SELECT EXISTS(SELECT 1 FROM allowed_chats WHERE ABS(chat_id) = ABS($1))`
+
+	var exists bool
+	err := r.pool.QueryRow(ctx, query, chatID).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("failed to check allowed chat: %w", err)
+	}
+
+	return exists, nil
+}
+
+// GetAllowedChats returns all allowed chat IDs
+func (r *Repository) GetAllowedChats(ctx context.Context) ([]int64, error) {
+	query := `SELECT chat_id FROM allowed_chats ORDER BY created_at`
+
+	rows, err := r.pool.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get allowed chats: %w", err)
+	}
+	defer rows.Close()
+
+	var chatIDs []int64
+	for rows.Next() {
+		var chatID int64
+		if err := rows.Scan(&chatID); err != nil {
+			return nil, fmt.Errorf("failed to scan chat ID: %w", err)
+		}
+		chatIDs = append(chatIDs, chatID)
+	}
+
+	return chatIDs, rows.Err()
+}
+
+// AddAllowedChat adds a new chat to the allowed list
+func (r *Repository) AddAllowedChat(ctx context.Context, chatID int64, name string) error {
+	query := `
+		INSERT INTO allowed_chats (chat_id, name, created_at)
+		VALUES ($1, $2, $3)
+		ON CONFLICT (chat_id) DO NOTHING`
+
+	_, err := r.pool.Exec(ctx, query, chatID, name, time.Now())
+	if err != nil {
+		return fmt.Errorf("failed to add allowed chat: %w", err)
+	}
+
+	return nil
+}
+
+// RemoveAllowedChat removes a chat from the allowed list
+func (r *Repository) RemoveAllowedChat(ctx context.Context, chatID int64) error {
+	query := `DELETE FROM allowed_chats WHERE chat_id = $1`
+
+	_, err := r.pool.Exec(ctx, query, chatID)
+	if err != nil {
+		return fmt.Errorf("failed to remove allowed chat: %w", err)
+	}
+
+	return nil
+}
