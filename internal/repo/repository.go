@@ -517,6 +517,35 @@ func (r *Repository) GetUserRolesByChatID(ctx context.Context, chatID int64) ([]
 	return roles, nil
 }
 
+// GetUserRole retrieves a specific user's role in a chat
+func (r *Repository) GetUserRole(ctx context.Context, userID, chatID int64) (*models.UserRole, error) {
+	query := `
+		SELECT id, telegram_user_id, telegram_chat_id, role, expires_at, created_at, updated_at
+		FROM user_roles
+		WHERE telegram_user_id = $1 AND telegram_chat_id = $2
+	`
+
+	var role models.UserRole
+	err := r.pool.QueryRow(ctx, query, userID, chatID).Scan(
+		&role.ID,
+		&role.TelegramUserID,
+		&role.TelegramChatID,
+		&role.Role,
+		&role.ExpiresAt,
+		&role.CreatedAt,
+		&role.UpdatedAt,
+	)
+
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, fmt.Errorf("user role not found")
+		}
+		return nil, fmt.Errorf("failed to query user role: %w", err)
+	}
+
+	return &role, nil
+}
+
 // SetUserRole creates or updates a user role in a chat
 func (r *Repository) SetUserRole(ctx context.Context, userID, chatID int64, role string, expiresAt *time.Time) (*models.UserRole, error) {
 	query := `
@@ -564,4 +593,36 @@ func (r *Repository) RemoveUserRole(ctx context.Context, userID, chatID int64) e
 	}
 
 	return nil
+}
+
+// GetUserChats retrieves all chat IDs where the user has any role
+func (r *Repository) GetUserChats(ctx context.Context, userID int64) ([]int64, error) {
+	query := `
+		SELECT DISTINCT telegram_chat_id
+		FROM user_roles
+		WHERE telegram_user_id = $1
+		  AND (expires_at IS NULL OR expires_at > now())
+		ORDER BY telegram_chat_id
+	`
+
+	rows, err := r.pool.Query(ctx, query, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query user chats: %w", err)
+	}
+	defer rows.Close()
+
+	var chatIDs []int64
+	for rows.Next() {
+		var chatID int64
+		if err := rows.Scan(&chatID); err != nil {
+			return nil, fmt.Errorf("failed to scan chat ID: %w", err)
+		}
+		chatIDs = append(chatIDs, chatID)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating user chats: %w", err)
+	}
+
+	return chatIDs, nil
 }

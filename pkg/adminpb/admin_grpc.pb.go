@@ -28,6 +28,7 @@ const (
 	AdminService_GetAllowedChats_FullMethodName      = "/william.admin.v1.AdminService/GetAllowedChats"
 	AdminService_AddAllowedChat_FullMethodName       = "/william.admin.v1.AdminService/AddAllowedChat"
 	AdminService_RemoveAllowedChat_FullMethodName    = "/william.admin.v1.AdminService/RemoveAllowedChat"
+	AdminService_GetMyChats_FullMethodName           = "/william.admin.v1.AdminService/GetMyChats"
 )
 
 // AdminServiceClient is the client API for AdminService service.
@@ -54,6 +55,8 @@ type AdminServiceClient interface {
 	AddAllowedChat(ctx context.Context, in *AddAllowedChatRequest, opts ...grpc.CallOption) (*AddAllowedChatResponse, error)
 	// RemoveAllowedChat removes a chat from the allowed list
 	RemoveAllowedChat(ctx context.Context, in *RemoveAllowedChatRequest, opts ...grpc.CallOption) (*RemoveAllowedChatResponse, error)
+	// GetMyChats retrieves chats accessible by the current user
+	GetMyChats(ctx context.Context, in *GetMyChatsRequest, opts ...grpc.CallOption) (*GetMyChatsResponse, error)
 }
 
 type adminServiceClient struct {
@@ -154,6 +157,16 @@ func (c *adminServiceClient) RemoveAllowedChat(ctx context.Context, in *RemoveAl
 	return out, nil
 }
 
+func (c *adminServiceClient) GetMyChats(ctx context.Context, in *GetMyChatsRequest, opts ...grpc.CallOption) (*GetMyChatsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetMyChatsResponse)
+	err := c.cc.Invoke(ctx, AdminService_GetMyChats_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminServiceServer is the server API for AdminService service.
 // All implementations must embed UnimplementedAdminServiceServer
 // for forward compatibility.
@@ -178,6 +191,8 @@ type AdminServiceServer interface {
 	AddAllowedChat(context.Context, *AddAllowedChatRequest) (*AddAllowedChatResponse, error)
 	// RemoveAllowedChat removes a chat from the allowed list
 	RemoveAllowedChat(context.Context, *RemoveAllowedChatRequest) (*RemoveAllowedChatResponse, error)
+	// GetMyChats retrieves chats accessible by the current user
+	GetMyChats(context.Context, *GetMyChatsRequest) (*GetMyChatsResponse, error)
 	mustEmbedUnimplementedAdminServiceServer()
 }
 
@@ -214,6 +229,9 @@ func (UnimplementedAdminServiceServer) AddAllowedChat(context.Context, *AddAllow
 }
 func (UnimplementedAdminServiceServer) RemoveAllowedChat(context.Context, *RemoveAllowedChatRequest) (*RemoveAllowedChatResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveAllowedChat not implemented")
+}
+func (UnimplementedAdminServiceServer) GetMyChats(context.Context, *GetMyChatsRequest) (*GetMyChatsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetMyChats not implemented")
 }
 func (UnimplementedAdminServiceServer) mustEmbedUnimplementedAdminServiceServer() {}
 func (UnimplementedAdminServiceServer) testEmbeddedByValue()                      {}
@@ -398,6 +416,24 @@ func _AdminService_RemoveAllowedChat_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminService_GetMyChats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMyChatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).GetMyChats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_GetMyChats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).GetMyChats(ctx, req.(*GetMyChatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminService_ServiceDesc is the grpc.ServiceDesc for AdminService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -440,6 +476,10 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RemoveAllowedChat",
 			Handler:    _AdminService_RemoveAllowedChat_Handler,
+		},
+		{
+			MethodName: "GetMyChats",
+			Handler:    _AdminService_GetMyChats_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

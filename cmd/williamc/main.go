@@ -106,6 +106,18 @@ func main() {
 				Action: triggerSummarizationAction,
 			},
 			{
+				Name:  "get-my-chats",
+				Usage: "Get chats accessible by current user",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:     "token",
+						Usage:    "JWT token for authentication",
+						Required: true,
+					},
+				},
+				Action: getMyChatsAction,
+			},
+			{
 				Name:  "get-user-roles",
 				Usage: "Get all user roles for a chat",
 				Flags: []cli.Flag{
@@ -665,6 +677,40 @@ func removeAllowedChatAction(c *cli.Context) error {
 	}
 
 	fmt.Printf("Allowed chat removed successfully\n")
+
+	return nil
+}
+
+func getMyChatsAction(c *cli.Context) error {
+	server := c.String("server")
+	token := c.String("token")
+
+	conn, err := grpc.NewClient(server, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return fmt.Errorf("failed to connect to server: %w", err)
+	}
+	defer func() {
+		if closeErr := conn.Close(); closeErr != nil {
+			fmt.Printf("Warning: failed to close connection: %v\n", closeErr)
+		}
+	}()
+
+	client := adminpb.NewAdminServiceClient(conn)
+
+	// Add JWT token to metadata
+	ctx := metadata.AppendToOutgoingContext(context.Background(), "authorization", "Bearer "+token)
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	resp, err := client.GetMyChats(ctx, &adminpb.GetMyChatsRequest{})
+	if err != nil {
+		return fmt.Errorf("gRPC call failed: %w", err)
+	}
+
+	fmt.Printf("Found %d accessible chats:\n", len(resp.ChatIds))
+	for i, chatID := range resp.ChatIds {
+		fmt.Printf("Chat %d: %d\n", i+1, chatID)
+	}
 
 	return nil
 }

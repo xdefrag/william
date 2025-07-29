@@ -1207,6 +1207,87 @@ func (*RemoveAllowedChatResponse) Descriptor() ([]byte, []int) {
 	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{21}
 }
 
+// My chats requests and responses
+type GetMyChatsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetMyChatsRequest) Reset() {
+	*x = GetMyChatsRequest{}
+	mi := &file_william_admin_v1_admin_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetMyChatsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetMyChatsRequest) ProtoMessage() {}
+
+func (x *GetMyChatsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_william_admin_v1_admin_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetMyChatsRequest.ProtoReflect.Descriptor instead.
+func (*GetMyChatsRequest) Descriptor() ([]byte, []int) {
+	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{22}
+}
+
+type GetMyChatsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ChatIds       []int64                `protobuf:"varint,1,rep,packed,name=chat_ids,json=chatIds,proto3" json:"chat_ids,omitempty"` // List of accessible chat IDs
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetMyChatsResponse) Reset() {
+	*x = GetMyChatsResponse{}
+	mi := &file_william_admin_v1_admin_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetMyChatsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetMyChatsResponse) ProtoMessage() {}
+
+func (x *GetMyChatsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_william_admin_v1_admin_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetMyChatsResponse.ProtoReflect.Descriptor instead.
+func (*GetMyChatsResponse) Descriptor() ([]byte, []int) {
+	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *GetMyChatsResponse) GetChatIds() []int64 {
+	if x != nil {
+		return x.ChatIds
+	}
+	return nil
+}
+
 var File_william_admin_v1_admin_proto protoreflect.FileDescriptor
 
 const file_william_admin_v1_admin_proto_rawDesc = "" +
@@ -1310,7 +1391,10 @@ const file_william_admin_v1_admin_proto_rawDesc = "" +
 	"\achat_id\x18\x01 \x01(\x03R\x06chatId\"3\n" +
 	"\x18RemoveAllowedChatRequest\x12\x17\n" +
 	"\achat_id\x18\x01 \x01(\x03R\x06chatId\"\x1b\n" +
-	"\x19RemoveAllowedChatResponse2\xaa\a\n" +
+	"\x19RemoveAllowedChatResponse\"\x13\n" +
+	"\x11GetMyChatsRequest\"/\n" +
+	"\x12GetMyChatsResponse\x12\x19\n" +
+	"\bchat_ids\x18\x01 \x03(\x03R\achatIds2\x83\b\n" +
 	"\fAdminService\x12c\n" +
 	"\x0eGetChatSummary\x12'.william.admin.v1.GetChatSummaryRequest\x1a(.william.admin.v1.GetChatSummaryResponse\x12c\n" +
 	"\x0eGetUserSummary\x12'.william.admin.v1.GetUserSummaryRequest\x1a(.william.admin.v1.GetUserSummaryResponse\x12u\n" +
@@ -1320,7 +1404,9 @@ const file_william_admin_v1_admin_proto_rawDesc = "" +
 	"\x0eRemoveUserRole\x12'.william.admin.v1.RemoveUserRoleRequest\x1a(.william.admin.v1.RemoveUserRoleResponse\x12f\n" +
 	"\x0fGetAllowedChats\x12(.william.admin.v1.GetAllowedChatsRequest\x1a).william.admin.v1.GetAllowedChatsResponse\x12c\n" +
 	"\x0eAddAllowedChat\x12'.william.admin.v1.AddAllowedChatRequest\x1a(.william.admin.v1.AddAllowedChatResponse\x12l\n" +
-	"\x11RemoveAllowedChat\x12*.william.admin.v1.RemoveAllowedChatRequest\x1a+.william.admin.v1.RemoveAllowedChatResponseB(Z&github.com/xdefrag/william/pkg/adminpbb\x06proto3"
+	"\x11RemoveAllowedChat\x12*.william.admin.v1.RemoveAllowedChatRequest\x1a+.william.admin.v1.RemoveAllowedChatResponse\x12W\n" +
+	"\n" +
+	"GetMyChats\x12#.william.admin.v1.GetMyChatsRequest\x1a$.william.admin.v1.GetMyChatsResponseB(Z&github.com/xdefrag/william/pkg/adminpbb\x06proto3"
 
 var (
 	file_william_admin_v1_admin_proto_rawDescOnce sync.Once
@@ -1334,7 +1420,7 @@ func file_william_admin_v1_admin_proto_rawDescGZIP() []byte {
 	return file_william_admin_v1_admin_proto_rawDescData
 }
 
-var file_william_admin_v1_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
+var file_william_admin_v1_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
 var file_william_admin_v1_admin_proto_goTypes = []any{
 	(*ChatSummary)(nil),                  // 0: william.admin.v1.ChatSummary
 	(*UserSummary)(nil),                  // 1: william.admin.v1.UserSummary
@@ -1358,29 +1444,31 @@ var file_william_admin_v1_admin_proto_goTypes = []any{
 	(*AddAllowedChatResponse)(nil),       // 19: william.admin.v1.AddAllowedChatResponse
 	(*RemoveAllowedChatRequest)(nil),     // 20: william.admin.v1.RemoveAllowedChatRequest
 	(*RemoveAllowedChatResponse)(nil),    // 21: william.admin.v1.RemoveAllowedChatResponse
-	nil,                                  // 22: william.admin.v1.ChatSummary.TopicsEntry
-	nil,                                  // 23: william.admin.v1.UserSummary.LikesEntry
-	nil,                                  // 24: william.admin.v1.UserSummary.DislikesEntry
-	nil,                                  // 25: william.admin.v1.UserSummary.CompetenciesEntry
-	(*timestamppb.Timestamp)(nil),        // 26: google.protobuf.Timestamp
+	(*GetMyChatsRequest)(nil),            // 22: william.admin.v1.GetMyChatsRequest
+	(*GetMyChatsResponse)(nil),           // 23: william.admin.v1.GetMyChatsResponse
+	nil,                                  // 24: william.admin.v1.ChatSummary.TopicsEntry
+	nil,                                  // 25: william.admin.v1.UserSummary.LikesEntry
+	nil,                                  // 26: william.admin.v1.UserSummary.DislikesEntry
+	nil,                                  // 27: william.admin.v1.UserSummary.CompetenciesEntry
+	(*timestamppb.Timestamp)(nil),        // 28: google.protobuf.Timestamp
 }
 var file_william_admin_v1_admin_proto_depIdxs = []int32{
-	22, // 0: william.admin.v1.ChatSummary.topics:type_name -> william.admin.v1.ChatSummary.TopicsEntry
-	26, // 1: william.admin.v1.ChatSummary.created_at:type_name -> google.protobuf.Timestamp
-	26, // 2: william.admin.v1.ChatSummary.updated_at:type_name -> google.protobuf.Timestamp
-	23, // 3: william.admin.v1.UserSummary.likes:type_name -> william.admin.v1.UserSummary.LikesEntry
-	24, // 4: william.admin.v1.UserSummary.dislikes:type_name -> william.admin.v1.UserSummary.DislikesEntry
-	25, // 5: william.admin.v1.UserSummary.competencies:type_name -> william.admin.v1.UserSummary.CompetenciesEntry
-	26, // 6: william.admin.v1.UserSummary.created_at:type_name -> google.protobuf.Timestamp
-	26, // 7: william.admin.v1.UserSummary.updated_at:type_name -> google.protobuf.Timestamp
-	26, // 8: william.admin.v1.UserRole.expires_at:type_name -> google.protobuf.Timestamp
-	26, // 9: william.admin.v1.UserRole.created_at:type_name -> google.protobuf.Timestamp
-	26, // 10: william.admin.v1.UserRole.updated_at:type_name -> google.protobuf.Timestamp
-	26, // 11: william.admin.v1.AllowedChat.created_at:type_name -> google.protobuf.Timestamp
+	24, // 0: william.admin.v1.ChatSummary.topics:type_name -> william.admin.v1.ChatSummary.TopicsEntry
+	28, // 1: william.admin.v1.ChatSummary.created_at:type_name -> google.protobuf.Timestamp
+	28, // 2: william.admin.v1.ChatSummary.updated_at:type_name -> google.protobuf.Timestamp
+	25, // 3: william.admin.v1.UserSummary.likes:type_name -> william.admin.v1.UserSummary.LikesEntry
+	26, // 4: william.admin.v1.UserSummary.dislikes:type_name -> william.admin.v1.UserSummary.DislikesEntry
+	27, // 5: william.admin.v1.UserSummary.competencies:type_name -> william.admin.v1.UserSummary.CompetenciesEntry
+	28, // 6: william.admin.v1.UserSummary.created_at:type_name -> google.protobuf.Timestamp
+	28, // 7: william.admin.v1.UserSummary.updated_at:type_name -> google.protobuf.Timestamp
+	28, // 8: william.admin.v1.UserRole.expires_at:type_name -> google.protobuf.Timestamp
+	28, // 9: william.admin.v1.UserRole.created_at:type_name -> google.protobuf.Timestamp
+	28, // 10: william.admin.v1.UserRole.updated_at:type_name -> google.protobuf.Timestamp
+	28, // 11: william.admin.v1.AllowedChat.created_at:type_name -> google.protobuf.Timestamp
 	0,  // 12: william.admin.v1.GetChatSummaryResponse.summaries:type_name -> william.admin.v1.ChatSummary
 	1,  // 13: william.admin.v1.GetUserSummaryResponse.summaries:type_name -> william.admin.v1.UserSummary
 	2,  // 14: william.admin.v1.GetUserRolesResponse.roles:type_name -> william.admin.v1.UserRole
-	26, // 15: william.admin.v1.SetUserRoleRequest.expires_at:type_name -> google.protobuf.Timestamp
+	28, // 15: william.admin.v1.SetUserRoleRequest.expires_at:type_name -> google.protobuf.Timestamp
 	3,  // 16: william.admin.v1.GetAllowedChatsResponse.chats:type_name -> william.admin.v1.AllowedChat
 	4,  // 17: william.admin.v1.AdminService.GetChatSummary:input_type -> william.admin.v1.GetChatSummaryRequest
 	6,  // 18: william.admin.v1.AdminService.GetUserSummary:input_type -> william.admin.v1.GetUserSummaryRequest
@@ -1391,17 +1479,19 @@ var file_william_admin_v1_admin_proto_depIdxs = []int32{
 	16, // 23: william.admin.v1.AdminService.GetAllowedChats:input_type -> william.admin.v1.GetAllowedChatsRequest
 	18, // 24: william.admin.v1.AdminService.AddAllowedChat:input_type -> william.admin.v1.AddAllowedChatRequest
 	20, // 25: william.admin.v1.AdminService.RemoveAllowedChat:input_type -> william.admin.v1.RemoveAllowedChatRequest
-	5,  // 26: william.admin.v1.AdminService.GetChatSummary:output_type -> william.admin.v1.GetChatSummaryResponse
-	7,  // 27: william.admin.v1.AdminService.GetUserSummary:output_type -> william.admin.v1.GetUserSummaryResponse
-	9,  // 28: william.admin.v1.AdminService.TriggerSummarization:output_type -> william.admin.v1.TriggerSummarizationResponse
-	11, // 29: william.admin.v1.AdminService.GetUserRoles:output_type -> william.admin.v1.GetUserRolesResponse
-	13, // 30: william.admin.v1.AdminService.SetUserRole:output_type -> william.admin.v1.SetUserRoleResponse
-	15, // 31: william.admin.v1.AdminService.RemoveUserRole:output_type -> william.admin.v1.RemoveUserRoleResponse
-	17, // 32: william.admin.v1.AdminService.GetAllowedChats:output_type -> william.admin.v1.GetAllowedChatsResponse
-	19, // 33: william.admin.v1.AdminService.AddAllowedChat:output_type -> william.admin.v1.AddAllowedChatResponse
-	21, // 34: william.admin.v1.AdminService.RemoveAllowedChat:output_type -> william.admin.v1.RemoveAllowedChatResponse
-	26, // [26:35] is the sub-list for method output_type
-	17, // [17:26] is the sub-list for method input_type
+	22, // 26: william.admin.v1.AdminService.GetMyChats:input_type -> william.admin.v1.GetMyChatsRequest
+	5,  // 27: william.admin.v1.AdminService.GetChatSummary:output_type -> william.admin.v1.GetChatSummaryResponse
+	7,  // 28: william.admin.v1.AdminService.GetUserSummary:output_type -> william.admin.v1.GetUserSummaryResponse
+	9,  // 29: william.admin.v1.AdminService.TriggerSummarization:output_type -> william.admin.v1.TriggerSummarizationResponse
+	11, // 30: william.admin.v1.AdminService.GetUserRoles:output_type -> william.admin.v1.GetUserRolesResponse
+	13, // 31: william.admin.v1.AdminService.SetUserRole:output_type -> william.admin.v1.SetUserRoleResponse
+	15, // 32: william.admin.v1.AdminService.RemoveUserRole:output_type -> william.admin.v1.RemoveUserRoleResponse
+	17, // 33: william.admin.v1.AdminService.GetAllowedChats:output_type -> william.admin.v1.GetAllowedChatsResponse
+	19, // 34: william.admin.v1.AdminService.AddAllowedChat:output_type -> william.admin.v1.AddAllowedChatResponse
+	21, // 35: william.admin.v1.AdminService.RemoveAllowedChat:output_type -> william.admin.v1.RemoveAllowedChatResponse
+	23, // 36: william.admin.v1.AdminService.GetMyChats:output_type -> william.admin.v1.GetMyChatsResponse
+	27, // [27:37] is the sub-list for method output_type
+	17, // [17:27] is the sub-list for method input_type
 	17, // [17:17] is the sub-list for extension type_name
 	17, // [17:17] is the sub-list for extension extendee
 	0,  // [0:17] is the sub-list for field type_name
@@ -1424,7 +1514,7 @@ func file_william_admin_v1_admin_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_william_admin_v1_admin_proto_rawDesc), len(file_william_admin_v1_admin_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   26,
+			NumMessages:   28,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

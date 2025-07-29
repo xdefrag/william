@@ -20,6 +20,13 @@ import (
 	"github.com/xdefrag/william/pkg/models"
 )
 
+// Role constants
+const (
+	RoleAdmin     = "admin"
+	RoleModerator = "moderator"
+	RoleViewer    = "viewer"
+)
+
 // AdminService implements the AdminServiceServer interface
 type AdminService struct {
 	adminpb.UnimplementedAdminServiceServer
@@ -43,6 +50,13 @@ func NewAdminService(cfg *config.Config, repository *repo.Repository, publisher 
 func (s *AdminService) GetChatSummary(ctx context.Context, req *adminpb.GetChatSummaryRequest) (*adminpb.GetChatSummaryResponse, error) {
 	if len(req.ChatIds) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "at least one chat_id is required")
+	}
+
+	// Check view permissions for all requested chats
+	for _, chatID := range req.ChatIds {
+		if err := s.checkChatPermission(ctx, chatID, false); err != nil {
+			return nil, err
+		}
 	}
 
 	var summaries []*adminpb.ChatSummary
@@ -73,6 +87,11 @@ func (s *AdminService) GetUserSummary(ctx context.Context, req *adminpb.GetUserS
 		return nil, status.Error(codes.InvalidArgument, "at least one user_id is required")
 	}
 
+	// Check view permissions for the chat
+	if err := s.checkChatPermission(ctx, req.ChatId, false); err != nil {
+		return nil, err
+	}
+
 	var summaries []*adminpb.UserSummary
 	for _, userID := range req.UserIds {
 		summary, err := s.repo.GetLatestUserSummary(ctx, req.ChatId, userID)
@@ -97,6 +116,11 @@ func (s *AdminService) GetUserSummary(ctx context.Context, req *adminpb.GetUserS
 func (s *AdminService) TriggerSummarization(ctx context.Context, req *adminpb.TriggerSummarizationRequest) (*adminpb.TriggerSummarizationResponse, error) {
 	if req.ChatId == 0 {
 		return nil, status.Error(codes.InvalidArgument, "chat_id is required")
+	}
+
+	// Check mutation permissions for the chat (admin or moderator)
+	if err := s.checkChatPermission(ctx, req.ChatId, true); err != nil {
+		return nil, err
 	}
 
 	// Generate unique event ID for tracking
@@ -225,6 +249,31 @@ func (s *AdminService) userSummaryToProto(summary *models.UserSummary) *adminpb.
 	return proto
 }
 
+// GetMyChats retrieves chats accessible by the current user
+func (s *AdminService) GetMyChats(ctx context.Context, req *adminpb.GetMyChatsRequest) (*adminpb.GetMyChatsResponse, error) {
+	userID, ok := ctx.Value(TelegramUserIDKey).(int64)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "user ID not found in context")
+	}
+
+	// Get chat IDs where the user has any role
+	chatIDs, err := s.repo.GetUserChats(ctx, userID)
+	if err != nil {
+		s.logger.Error("Failed to get user chats",
+			slog.Int64("user_id", userID),
+			slog.String("error", err.Error()),
+		)
+		return nil, status.Error(codes.Internal, "failed to retrieve user chats")
+	}
+
+	s.logger.Info("Retrieved user chats",
+		slog.Int64("user_id", userID),
+		slog.Int("chat_count", len(chatIDs)),
+	)
+
+	return &adminpb.GetMyChatsResponse{ChatIds: chatIDs}, nil
+}
+
 // Role management handlers
 
 // isAdmin checks if the user has admin privileges
@@ -244,6 +293,81 @@ func (s *AdminService) isAdmin(ctx context.Context) error {
 			slog.Int64("admin_user_id", s.config.AdminUserID),
 		)
 		return status.Error(codes.PermissionDenied, "admin privileges required")
+	}
+
+	return nil
+}
+
+// hasRoleInChat checks if user has the specified role in the chat
+func (s *AdminService) hasRoleInChat(ctx context.Context, chatID int64, role string) (bool, error) {
+	userID, ok := ctx.Value(TelegramUserIDKey).(int64)
+	if !ok {
+		return false, status.Error(codes.Unauthenticated, "user ID not found in context")
+	}
+
+	userRole, err := s.repo.GetUserRole(ctx, userID, chatID)
+	if err != nil {
+		return false, nil // User has no role in this chat
+	}
+
+	return userRole.Role == role, nil
+}
+
+// checkChatPermission checks if user has permission for chat operations
+// isMutation: true for operations that modify data (admin/moderator), false for read-only (admin/moderator/viewer)
+func (s *AdminService) checkChatPermission(ctx context.Context, chatID int64, isMutation bool) error {
+	userID, ok := ctx.Value(TelegramUserIDKey).(int64)
+	if !ok {
+		return status.Error(codes.Unauthenticated, "user ID not found in context")
+	}
+
+	// Global admin has access to everything
+	if s.config.AdminUserID != 0 && userID == s.config.AdminUserID {
+		return nil
+	}
+
+	// Check user role in chat
+	userRole, err := s.repo.GetUserRole(ctx, userID, chatID)
+	if err != nil {
+		s.logger.Warn("User has no role in chat",
+			slog.Int64("user_id", userID),
+			slog.Int64("chat_id", chatID),
+		)
+		return status.Error(codes.PermissionDenied, "no access to this chat")
+	}
+
+	// Check if role has expired
+	if userRole.ExpiresAt != nil && time.Now().After(*userRole.ExpiresAt) {
+		s.logger.Warn("User role has expired",
+			slog.Int64("user_id", userID),
+			slog.Int64("chat_id", chatID),
+			slog.String("role", userRole.Role),
+			slog.Time("expired_at", *userRole.ExpiresAt),
+		)
+		return status.Error(codes.PermissionDenied, "role has expired")
+	}
+
+	// Check permissions based on operation type
+	if isMutation {
+		// Mutation operations: only admin and moderator
+		if userRole.Role != RoleAdmin && userRole.Role != RoleModerator {
+			s.logger.Warn("Insufficient permissions for mutation operation",
+				slog.Int64("user_id", userID),
+				slog.Int64("chat_id", chatID),
+				slog.String("role", userRole.Role),
+			)
+			return status.Error(codes.PermissionDenied, "insufficient permissions for this operation")
+		}
+	} else {
+		// Read operations: admin, moderator, and viewer
+		if userRole.Role != RoleAdmin && userRole.Role != RoleModerator && userRole.Role != RoleViewer {
+			s.logger.Warn("Insufficient permissions for read operation",
+				slog.Int64("user_id", userID),
+				slog.Int64("chat_id", chatID),
+				slog.String("role", userRole.Role),
+			)
+			return status.Error(codes.PermissionDenied, "insufficient permissions for this operation")
+		}
 	}
 
 	return nil
