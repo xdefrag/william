@@ -1,0 +1,333 @@
+---
+globs: *.proto,internal/grpc/*.go,pkg/adminpb/*
+alwaysApply: false
+---
+# gRPC API Design Principles
+
+## Overview
+These principles ensure clean, efficient gRPC APIs that are optimized for machine-to-machine communication rather than human consumption.
+
+## Core Principles
+
+### 1. No Success Fields
+❌ **Avoid**: Adding `bool success` fields to responses
+✅ **Correct**: Success is indicated by the absence of an error
+
+```protobuf
+// BAD
+message CreateUserResponse {
+  bool success = 1;
+  int64 user_id = 2;
+}
+
+// GOOD  
+message CreateUserResponse {
+  int64 user_id = 1;
+}
+```
+
+**Rationale**: gRPC has built-in error handling via status codes. If the RPC completes without error, it's inherently successful.
+
+### 2. No Human-Readable Messages
+❌ **Avoid**: Adding `string message` fields with human-readable text
+✅ **Correct**: Use gRPC status codes and details for error information
+
+```protobuf
+// BAD
+message DeleteUserResponse {
+  bool success = 1;
+  string message = 2; // "User deleted successfully"
+}
+
+// GOOD
+message DeleteUserResponse {
+  // Empty - success indicated by no error
+}
+```
+
+**Rationale**: Other services don't need human-readable messages. They parse structured responses and handle errors programmatically.
+
+### 3. Minimal Response Data
+❌ **Avoid**: Returning full objects unless specifically needed
+✅ **Correct**: Return only essential identifiers for created/updated resources
+
+```protobuf
+// BAD - returns full object
+message CreateChatResponse {
+  AllowedChat chat = 1; // Full object with all fields
+}
+
+// GOOD - returns only ID
+message CreateChatResponse {
+  int64 chat_id = 1; // Just the identifier
+}
+```
+
+**Rationale**: Other services typically only need IDs for further operations. Full objects waste bandwidth and parsing time.
+
+### 4. Empty Responses for Deletions
+For deletion operations that don't need to return data:
+
+```protobuf
+message DeleteUserResponse {
+  // Empty response - success indicated by no error
+}
+```
+
+### 5. Essential Data Only in Lists
+For list/get operations, include only the data that consuming services actually need:
+
+```protobuf
+message GetUsersResponse {
+  repeated User users = 1; // Full objects are OK for queries
+}
+
+message GetUserIdsResponse {
+  repeated int64 user_ids = 1; // When only IDs are needed
+}
+```
+
+## Implementation Guidelines
+
+### Proto File Structure
+- Keep response messages minimal
+- Use meaningful field names
+- Document when fields are optional vs required
+- Group related operations together
+
+### Error Handling
+- Use appropriate gRPC status codes (NOT_FOUND, INVALID_ARGUMENT, etc.)
+- Include structured error details when needed
+- Never use success flags or human messages for errors
+
+### Field Naming
+- Use `snake_case` for field names
+- Be explicit: `user_id` not `id`, `chat_id` not `chat`
+- Use consistent naming across all messages
+
+## Examples
+
+### User Management
+```protobuf
+// Create
+message CreateUserRequest {
+  string username = 1;
+  string email = 2;
+}
+
+message CreateUserResponse {
+  int64 user_id = 1;
+}
+
+// Delete
+message DeleteUserRequest {
+  int64 user_id = 1;
+}
+
+message DeleteUserResponse {
+  // Empty
+}
+
+// List
+message ListUsersRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+}
+
+message ListUsersResponse {
+  repeated User users = 1;
+  string next_page_token = 2;
+}
+```
+
+### Async Operations
+```protobuf
+message TriggerProcessingRequest {
+  int64 resource_id = 1;
+}
+
+message TriggerProcessingResponse {
+  string operation_id = 1; // For tracking async operation
+}
+```
+
+## Anti-Patterns to Avoid
+
+1. **Wrapper Objects**: Don't wrap everything in generic response objects
+2. **HTTP-style Status**: Don't mimic HTTP response patterns
+3. **Debug Information**: Don't include debug/verbose info in production APIs
+4. **Inconsistent Naming**: Don't mix camelCase and snake_case
+5. **Optional Everything**: Don't make everything optional without reason
+
+## Admin API Compliance
+
+The William admin API follows these principles:
+- No `success` or `message` fields
+- Minimal responses with only essential data
+- Empty responses for deletions
+- Structured data for queries
+- Proper gRPC error handling# gRPC API Design Principles
+
+## Overview
+These principles ensure clean, efficient gRPC APIs that are optimized for machine-to-machine communication rather than human consumption.
+
+## Core Principles
+
+### 1. No Success Fields
+❌ **Avoid**: Adding `bool success` fields to responses
+✅ **Correct**: Success is indicated by the absence of an error
+
+```protobuf
+// BAD
+message CreateUserResponse {
+  bool success = 1;
+  int64 user_id = 2;
+}
+
+// GOOD  
+message CreateUserResponse {
+  int64 user_id = 1;
+}
+```
+
+**Rationale**: gRPC has built-in error handling via status codes. If the RPC completes without error, it's inherently successful.
+
+### 2. No Human-Readable Messages
+❌ **Avoid**: Adding `string message` fields with human-readable text
+✅ **Correct**: Use gRPC status codes and details for error information
+
+```protobuf
+// BAD
+message DeleteUserResponse {
+  bool success = 1;
+  string message = 2; // "User deleted successfully"
+}
+
+// GOOD
+message DeleteUserResponse {
+  // Empty - success indicated by no error
+}
+```
+
+**Rationale**: Other services don't need human-readable messages. They parse structured responses and handle errors programmatically.
+
+### 3. Minimal Response Data
+❌ **Avoid**: Returning full objects unless specifically needed
+✅ **Correct**: Return only essential identifiers for created/updated resources
+
+```protobuf
+// BAD - returns full object
+message CreateChatResponse {
+  AllowedChat chat = 1; // Full object with all fields
+}
+
+// GOOD - returns only ID
+message CreateChatResponse {
+  int64 chat_id = 1; // Just the identifier
+}
+```
+
+**Rationale**: Other services typically only need IDs for further operations. Full objects waste bandwidth and parsing time.
+
+### 4. Empty Responses for Deletions
+For deletion operations that don't need to return data:
+
+```protobuf
+message DeleteUserResponse {
+  // Empty response - success indicated by no error
+}
+```
+
+### 5. Essential Data Only in Lists
+For list/get operations, include only the data that consuming services actually need:
+
+```protobuf
+message GetUsersResponse {
+  repeated User users = 1; // Full objects are OK for queries
+}
+
+message GetUserIdsResponse {
+  repeated int64 user_ids = 1; // When only IDs are needed
+}
+```
+
+## Implementation Guidelines
+
+### Proto File Structure
+- Keep response messages minimal
+- Use meaningful field names
+- Document when fields are optional vs required
+- Group related operations together
+
+### Error Handling
+- Use appropriate gRPC status codes (NOT_FOUND, INVALID_ARGUMENT, etc.)
+- Include structured error details when needed
+- Never use success flags or human messages for errors
+
+### Field Naming
+- Use `snake_case` for field names
+- Be explicit: `user_id` not `id`, `chat_id` not `chat`
+- Use consistent naming across all messages
+
+## Examples
+
+### User Management
+```protobuf
+// Create
+message CreateUserRequest {
+  string username = 1;
+  string email = 2;
+}
+
+message CreateUserResponse {
+  int64 user_id = 1;
+}
+
+// Delete
+message DeleteUserRequest {
+  int64 user_id = 1;
+}
+
+message DeleteUserResponse {
+  // Empty
+}
+
+// List
+message ListUsersRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+}
+
+message ListUsersResponse {
+  repeated User users = 1;
+  string next_page_token = 2;
+}
+```
+
+### Async Operations
+```protobuf
+message TriggerProcessingRequest {
+  int64 resource_id = 1;
+}
+
+message TriggerProcessingResponse {
+  string operation_id = 1; // For tracking async operation
+}
+```
+
+## Anti-Patterns to Avoid
+
+1. **Wrapper Objects**: Don't wrap everything in generic response objects
+2. **HTTP-style Status**: Don't mimic HTTP response patterns
+3. **Debug Information**: Don't include debug/verbose info in production APIs
+4. **Inconsistent Naming**: Don't mix camelCase and snake_case
+5. **Optional Everything**: Don't make everything optional without reason
+
+## Admin API Compliance
+
+The William admin API follows these principles:
+- No `success` or `message` fields
+- Minimal responses with only essential data
+- Empty responses for deletions
+- Structured data for queries
+- Proper gRPC error handling

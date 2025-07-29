@@ -54,7 +54,7 @@ func New(cfg *config.Config, repository *repo.Repository, publisher message.Publ
 	healthServer.SetServingStatus("", grpc_health_v1.HealthCheckResponse_SERVING)
 
 	// Register admin service
-	adminService := NewAdminService(repository, publisher, logger)
+	adminService := NewAdminService(cfg, repository, publisher, logger)
 	adminpb.RegisterAdminServiceServer(server, adminService)
 
 	// Enable server reflection for development

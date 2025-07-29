@@ -2,6 +2,7 @@
 alwaysApply: true
 ---
 
+
 # William - Telegram Community Secretary Bot
 
 ## Project Overview
@@ -16,6 +17,7 @@ William is a Telegram bot powered by ChatGPT (gpt-4o) that serves as a secretary
 - **GPT Client**: [internal/gpt/client.go](mdc:internal/gpt/client.go) - OpenAI GPT-4o integration
 - **Database**: [internal/repo/repository.go](mdc:internal/repo/repository.go) - PostgreSQL operations
 - **Scheduler**: [internal/scheduler/scheduler.go](mdc:internal/scheduler/scheduler.go) - Midnight cron jobs
+- **gRPC Admin**: [internal/grpc/](mdc:internal/grpc/) - Administrative API server
 - **Models**: [pkg/models/message.go](mdc:pkg/models/message.go) - Data structures
 
 ### Key Files
@@ -23,12 +25,15 @@ William is a Telegram bot powered by ChatGPT (gpt-4o) that serves as a secretary
 - **Dependencies**: [allowed-mods.txt](mdc:allowed-mods.txt) - Strict dependency control
 - **Database Schema**: [migrations/001_initial_schema.sql](mdc:migrations/001_initial_schema.sql) - PostgreSQL tables
 - **Build**: [Makefile](mdc:Makefile) - Development and deployment commands
+- **Protobuf**: [proto/william/admin/v1/admin.proto](mdc:proto/william/admin/v1/admin.proto) - gRPC API definitions
+- **gRPC Design**: [grpc-design-principles.mdc](mdc:grpc-design-principles.mdc) - API design guidelines
 
 ## Data Flow
 1. **Message Ingestion**: Telegram → `listener.go` → Database + Counter
 2. **Auto-Summarization**: N messages trigger → `summarizer.go` → GPT → Database
 3. **Mention Handling**: @william → `builder.go` → Context + GPT → Response
 4. **Midnight Reset**: Cron → Summarize all chats → Reset counters
+5. **Admin API**: gRPC → `admin.go` → Repository → Database
 
 ## Technology Stack
 - **Language**: Go 1.24+ (strict version compliance)
@@ -39,6 +44,11 @@ William is a Telegram bot powered by ChatGPT (gpt-4o) that serves as a secretary
 - **Events**: Watermill for pub/sub architecture
 - **DI**: samber/do container
 - **Migrations**: goose v3
+- **gRPC**: google.golang.org/grpc v1.74.2+ for admin API
+
+- **DI**: samber/do container
+- **Migrations**: goose v3
+
 # William - Telegram Community Secretary Bot
 
 ## Project Overview
@@ -53,6 +63,7 @@ William is a Telegram bot powered by ChatGPT (gpt-4o) that serves as a secretary
 - **GPT Client**: [internal/gpt/client.go](mdc:internal/gpt/client.go) - OpenAI GPT-4o integration
 - **Database**: [internal/repo/repository.go](mdc:internal/repo/repository.go) - PostgreSQL operations
 - **Scheduler**: [internal/scheduler/scheduler.go](mdc:internal/scheduler/scheduler.go) - Midnight cron jobs
+- **gRPC Admin**: [internal/grpc/](mdc:internal/grpc/) - Administrative API server
 - **Models**: [pkg/models/message.go](mdc:pkg/models/message.go) - Data structures
 
 ### Key Files
@@ -60,12 +71,15 @@ William is a Telegram bot powered by ChatGPT (gpt-4o) that serves as a secretary
 - **Dependencies**: [allowed-mods.txt](mdc:allowed-mods.txt) - Strict dependency control
 - **Database Schema**: [migrations/001_initial_schema.sql](mdc:migrations/001_initial_schema.sql) - PostgreSQL tables
 - **Build**: [Makefile](mdc:Makefile) - Development and deployment commands
+- **Protobuf**: [proto/william/admin/v1/admin.proto](mdc:proto/william/admin/v1/admin.proto) - gRPC API definitions
+- **gRPC Design**: [grpc-design-principles.mdc](mdc:grpc-design-principles.mdc) - API design guidelines
 
 ## Data Flow
 1. **Message Ingestion**: Telegram → `listener.go` → Database + Counter
 2. **Auto-Summarization**: N messages trigger → `summarizer.go` → GPT → Database
 3. **Mention Handling**: @william → `builder.go` → Context + GPT → Response
 4. **Midnight Reset**: Cron → Summarize all chats → Reset counters
+5. **Admin API**: gRPC → `admin.go` → Repository → Database
 
 ## Technology Stack
 - **Language**: Go 1.24+ (strict version compliance)
@@ -74,5 +88,8 @@ William is a Telegram bot powered by ChatGPT (gpt-4o) that serves as a secretary
 - **AI**: OpenAI GPT-4o (v1.8.2 - fixed version!)
 - **Database**: PostgreSQL 15 with pgx/v5
 - **Events**: Watermill for pub/sub architecture
+- **DI**: samber/do container
+- **Migrations**: goose v3
+- **gRPC**: google.golang.org/grpc v1.74.2+ for admin API
 - **DI**: samber/do container
 - **Migrations**: goose v3

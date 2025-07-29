@@ -14,6 +14,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/xdefrag/william/internal/bot"
+	"github.com/xdefrag/william/internal/config"
 	"github.com/xdefrag/william/internal/repo"
 	"github.com/xdefrag/william/pkg/adminpb"
 	"github.com/xdefrag/william/pkg/models"
@@ -22,14 +23,16 @@ import (
 // AdminService implements the AdminServiceServer interface
 type AdminService struct {
 	adminpb.UnimplementedAdminServiceServer
+	config    *config.Config
 	repo      *repo.Repository
 	publisher message.Publisher
 	logger    *slog.Logger
 }
 
 // NewAdminService creates a new AdminService instance
-func NewAdminService(repository *repo.Repository, publisher message.Publisher, logger *slog.Logger) *AdminService {
+func NewAdminService(cfg *config.Config, repository *repo.Repository, publisher message.Publisher, logger *slog.Logger) *AdminService {
 	return &AdminService{
+		config:    cfg,
 		repo:      repository,
 		publisher: publisher,
 		logger:    logger,
@@ -103,16 +106,13 @@ func (s *AdminService) TriggerSummarization(ctx context.Context, req *adminpb.Tr
 			slog.Int64("chat_id", req.ChatId),
 			slog.String("error", err.Error()),
 		)
-		return &adminpb.TriggerSummarizationResponse{
-			Success: false,
-			Message: func() *string { msg := "Failed to generate event ID"; return &msg }(),
-			EventId: func() *string { id := hex.EncodeToString(eventID); return &id }(),
-		}, nil
+		return nil, status.Error(codes.Internal, "failed to generate event ID")
 	}
 
+	eventIDStr := hex.EncodeToString(eventID)
 	s.logger.Info("Manual summarization triggered",
 		slog.Int64("chat_id", req.ChatId),
-		slog.String("event_id", hex.EncodeToString(eventID)),
+		slog.String("event_id", eventIDStr),
 	)
 
 	// Create and publish summarize event
@@ -125,39 +125,29 @@ func (s *AdminService) TriggerSummarization(ctx context.Context, req *adminpb.Tr
 	if err != nil {
 		s.logger.Error("Failed to marshal summarize event",
 			slog.Int64("chat_id", req.ChatId),
-			slog.String("event_id", hex.EncodeToString(eventID)),
+			slog.String("event_id", eventIDStr),
 			slog.String("error", err.Error()),
 		)
-		return &adminpb.TriggerSummarizationResponse{
-			Success: false,
-			Message: func() *string { msg := "Failed to create summarization event"; return &msg }(),
-			EventId: func() *string { id := hex.EncodeToString(eventID); return &id }(),
-		}, nil
+		return nil, status.Error(codes.Internal, "failed to create summarization event")
 	}
 
 	// Publish the event with the event ID as message ID
-	if err := s.publisher.Publish("summarize", message.NewMessage(hex.EncodeToString(eventID), eventData)); err != nil {
+	if err := s.publisher.Publish("summarize", message.NewMessage(eventIDStr, eventData)); err != nil {
 		s.logger.Error("Failed to publish summarize event",
 			slog.Int64("chat_id", req.ChatId),
-			slog.String("event_id", hex.EncodeToString(eventID)),
+			slog.String("event_id", eventIDStr),
 			slog.String("error", err.Error()),
 		)
-		return &adminpb.TriggerSummarizationResponse{
-			Success: false,
-			Message: func() *string { msg := "Failed to trigger summarization"; return &msg }(),
-			EventId: func() *string { id := hex.EncodeToString(eventID); return &id }(),
-		}, nil
+		return nil, status.Error(codes.Internal, "failed to trigger summarization")
 	}
 
 	s.logger.Info("Summarization event published successfully",
 		slog.Int64("chat_id", req.ChatId),
-		slog.String("event_id", hex.EncodeToString(eventID)),
+		slog.String("event_id", eventIDStr),
 	)
 
 	return &adminpb.TriggerSummarizationResponse{
-		Success: true,
-		Message: func() *string { msg := "Summarization triggered successfully"; return &msg }(),
-		EventId: func() *string { id := hex.EncodeToString(eventID); return &id }(),
+		EventId: eventIDStr,
 	}, nil
 }
 
@@ -230,6 +220,272 @@ func (s *AdminService) userSummaryToProto(summary *models.UserSummary) *adminpb.
 
 	if summary.Traits != nil {
 		proto.Traits = summary.Traits
+	}
+
+	return proto
+}
+
+// Role management handlers
+
+// isAdmin checks if the user has admin privileges
+func (s *AdminService) isAdmin(ctx context.Context) error {
+	userID, ok := ctx.Value(TelegramUserIDKey).(int64)
+	if !ok {
+		return status.Error(codes.Unauthenticated, "user ID not found in context")
+	}
+
+	if s.config.AdminUserID == 0 {
+		return status.Error(codes.PermissionDenied, "admin user not configured")
+	}
+
+	if userID != s.config.AdminUserID {
+		s.logger.Warn("Non-admin user attempted admin operation",
+			slog.Int64("user_id", userID),
+			slog.Int64("admin_user_id", s.config.AdminUserID),
+		)
+		return status.Error(codes.PermissionDenied, "admin privileges required")
+	}
+
+	return nil
+}
+
+// GetUserRoles retrieves all user roles for a chat
+func (s *AdminService) GetUserRoles(ctx context.Context, req *adminpb.GetUserRolesRequest) (*adminpb.GetUserRolesResponse, error) {
+	// Check admin privileges
+	if err := s.isAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	if req.TelegramChatId == 0 {
+		return nil, status.Error(codes.InvalidArgument, "telegram_chat_id is required")
+	}
+
+	roles, err := s.repo.GetUserRolesByChatID(ctx, req.TelegramChatId)
+	if err != nil {
+		s.logger.Error("Failed to get user roles",
+			slog.Int64("chat_id", req.TelegramChatId),
+			slog.String("error", err.Error()),
+		)
+		return nil, status.Error(codes.Internal, "failed to retrieve user roles")
+	}
+
+	var protoRoles []*adminpb.UserRole
+	for _, role := range roles {
+		protoRoles = append(protoRoles, s.userRoleToProto(role))
+	}
+
+	return &adminpb.GetUserRolesResponse{Roles: protoRoles}, nil
+}
+
+// SetUserRole assigns a role to a user in a chat
+func (s *AdminService) SetUserRole(ctx context.Context, req *adminpb.SetUserRoleRequest) (*adminpb.SetUserRoleResponse, error) {
+	// Check admin privileges
+	if err := s.isAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	if req.TelegramUserId == 0 {
+		return nil, status.Error(codes.InvalidArgument, "telegram_user_id is required")
+	}
+	if req.TelegramChatId == 0 {
+		return nil, status.Error(codes.InvalidArgument, "telegram_chat_id is required")
+	}
+	if req.Role == "" {
+		return nil, status.Error(codes.InvalidArgument, "role is required")
+	}
+
+	var expiresAt *time.Time
+	if req.ExpiresAt != nil {
+		expiry := req.ExpiresAt.AsTime()
+		expiresAt = &expiry
+	}
+
+	role, err := s.repo.SetUserRole(ctx, req.TelegramUserId, req.TelegramChatId, req.Role, expiresAt)
+	if err != nil {
+		s.logger.Error("Failed to set user role",
+			slog.Int64("user_id", req.TelegramUserId),
+			slog.Int64("chat_id", req.TelegramChatId),
+			slog.String("role", req.Role),
+			slog.String("error", err.Error()),
+		)
+		return nil, status.Error(codes.Internal, "failed to set user role")
+	}
+
+	s.logger.Info("User role set successfully",
+		slog.Int64("user_id", req.TelegramUserId),
+		slog.Int64("chat_id", req.TelegramChatId),
+		slog.String("role", req.Role),
+		slog.Int64("role_id", role.ID),
+	)
+
+	return &adminpb.SetUserRoleResponse{
+		RoleId: role.ID,
+	}, nil
+}
+
+// RemoveUserRole removes a user's role from a chat
+func (s *AdminService) RemoveUserRole(ctx context.Context, req *adminpb.RemoveUserRoleRequest) (*adminpb.RemoveUserRoleResponse, error) {
+	// Check admin privileges
+	if err := s.isAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	if req.TelegramUserId == 0 {
+		return nil, status.Error(codes.InvalidArgument, "telegram_user_id is required")
+	}
+	if req.TelegramChatId == 0 {
+		return nil, status.Error(codes.InvalidArgument, "telegram_chat_id is required")
+	}
+
+	err := s.repo.RemoveUserRole(ctx, req.TelegramUserId, req.TelegramChatId)
+	if err != nil {
+		s.logger.Error("Failed to remove user role",
+			slog.Int64("user_id", req.TelegramUserId),
+			slog.Int64("chat_id", req.TelegramChatId),
+			slog.String("error", err.Error()),
+		)
+
+		if err.Error() == "user role not found" {
+			return nil, status.Error(codes.NotFound, "user role not found")
+		}
+
+		return nil, status.Error(codes.Internal, "failed to remove user role")
+	}
+
+	s.logger.Info("User role removed successfully",
+		slog.Int64("user_id", req.TelegramUserId),
+		slog.Int64("chat_id", req.TelegramChatId),
+	)
+
+	return &adminpb.RemoveUserRoleResponse{}, nil
+}
+
+// userRoleToProto converts a UserRole model to protobuf message
+func (s *AdminService) userRoleToProto(role *models.UserRole) *adminpb.UserRole {
+	proto := &adminpb.UserRole{
+		Id:             role.ID,
+		TelegramUserId: role.TelegramUserID,
+		TelegramChatId: role.TelegramChatID,
+		Role:           role.Role,
+		CreatedAt:      timestamppb.New(role.CreatedAt),
+		UpdatedAt:      timestamppb.New(role.UpdatedAt),
+	}
+
+	if role.ExpiresAt != nil {
+		proto.ExpiresAt = timestamppb.New(*role.ExpiresAt)
+	}
+
+	return proto
+}
+
+// Allowed chats management handlers
+
+// GetAllowedChats retrieves all allowed chats
+func (s *AdminService) GetAllowedChats(ctx context.Context, req *adminpb.GetAllowedChatsRequest) (*adminpb.GetAllowedChatsResponse, error) {
+	// Check admin privileges
+	if err := s.isAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	chats, err := s.repo.GetAllowedChatsDetailed(ctx)
+	if err != nil {
+		s.logger.Error("Failed to get allowed chats",
+			slog.String("error", err.Error()),
+		)
+		return nil, status.Error(codes.Internal, "failed to retrieve allowed chats")
+	}
+
+	var protoChats []*adminpb.AllowedChat
+	for _, chat := range chats {
+		protoChats = append(protoChats, s.allowedChatToProto(chat))
+	}
+
+	return &adminpb.GetAllowedChatsResponse{Chats: protoChats}, nil
+}
+
+// AddAllowedChat adds a chat to the allowed list
+func (s *AdminService) AddAllowedChat(ctx context.Context, req *adminpb.AddAllowedChatRequest) (*adminpb.AddAllowedChatResponse, error) {
+	// Check admin privileges
+	if err := s.isAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	if req.ChatId == 0 {
+		return nil, status.Error(codes.InvalidArgument, "chat_id is required")
+	}
+
+	var name *string
+	if req.Name != nil {
+		name = req.Name
+	}
+
+	chat, err := s.repo.AddAllowedChatDetailed(ctx, req.ChatId, name)
+	if err != nil {
+		s.logger.Error("Failed to add allowed chat",
+			slog.Int64("chat_id", req.ChatId),
+			slog.String("error", err.Error()),
+		)
+		return nil, status.Error(codes.Internal, "failed to add allowed chat")
+	}
+
+	s.logger.Info("Allowed chat added successfully",
+		slog.Int64("chat_id", req.ChatId),
+		slog.Int64("record_id", chat.ID),
+		slog.String("name", func() string {
+			if name != nil {
+				return *name
+			}
+			return ""
+		}()),
+	)
+
+	return &adminpb.AddAllowedChatResponse{
+		ChatId: chat.ID,
+	}, nil
+}
+
+// RemoveAllowedChat removes a chat from the allowed list
+func (s *AdminService) RemoveAllowedChat(ctx context.Context, req *adminpb.RemoveAllowedChatRequest) (*adminpb.RemoveAllowedChatResponse, error) {
+	// Check admin privileges
+	if err := s.isAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	if req.ChatId == 0 {
+		return nil, status.Error(codes.InvalidArgument, "chat_id is required")
+	}
+
+	err := s.repo.RemoveAllowedChat(ctx, req.ChatId)
+	if err != nil {
+		s.logger.Error("Failed to remove allowed chat",
+			slog.Int64("chat_id", req.ChatId),
+			slog.String("error", err.Error()),
+		)
+
+		if err.Error() == "allowed chat not found" {
+			return nil, status.Error(codes.NotFound, "allowed chat not found")
+		}
+
+		return nil, status.Error(codes.Internal, "failed to remove allowed chat")
+	}
+
+	s.logger.Info("Allowed chat removed successfully",
+		slog.Int64("chat_id", req.ChatId),
+	)
+
+	return &adminpb.RemoveAllowedChatResponse{}, nil
+}
+
+// allowedChatToProto converts an AllowedChat model to protobuf message
+func (s *AdminService) allowedChatToProto(chat *models.AllowedChat) *adminpb.AllowedChat {
+	proto := &adminpb.AllowedChat{
+		Id:        chat.ID,
+		ChatId:    chat.ChatID,
+		CreatedAt: timestamppb.New(chat.CreatedAt),
+	}
+
+	if chat.Name != nil {
+		proto.Name = chat.Name
 	}
 
 	return proto

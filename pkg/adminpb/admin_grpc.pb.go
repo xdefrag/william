@@ -22,6 +22,12 @@ const (
 	AdminService_GetChatSummary_FullMethodName       = "/william.admin.v1.AdminService/GetChatSummary"
 	AdminService_GetUserSummary_FullMethodName       = "/william.admin.v1.AdminService/GetUserSummary"
 	AdminService_TriggerSummarization_FullMethodName = "/william.admin.v1.AdminService/TriggerSummarization"
+	AdminService_GetUserRoles_FullMethodName         = "/william.admin.v1.AdminService/GetUserRoles"
+	AdminService_SetUserRole_FullMethodName          = "/william.admin.v1.AdminService/SetUserRole"
+	AdminService_RemoveUserRole_FullMethodName       = "/william.admin.v1.AdminService/RemoveUserRole"
+	AdminService_GetAllowedChats_FullMethodName      = "/william.admin.v1.AdminService/GetAllowedChats"
+	AdminService_AddAllowedChat_FullMethodName       = "/william.admin.v1.AdminService/AddAllowedChat"
+	AdminService_RemoveAllowedChat_FullMethodName    = "/william.admin.v1.AdminService/RemoveAllowedChat"
 )
 
 // AdminServiceClient is the client API for AdminService service.
@@ -36,6 +42,18 @@ type AdminServiceClient interface {
 	GetUserSummary(ctx context.Context, in *GetUserSummaryRequest, opts ...grpc.CallOption) (*GetUserSummaryResponse, error)
 	// TriggerSummarization manually triggers summarization for a chat
 	TriggerSummarization(ctx context.Context, in *TriggerSummarizationRequest, opts ...grpc.CallOption) (*TriggerSummarizationResponse, error)
+	// GetUserRoles retrieves all user roles for a chat
+	GetUserRoles(ctx context.Context, in *GetUserRolesRequest, opts ...grpc.CallOption) (*GetUserRolesResponse, error)
+	// SetUserRole assigns a role to a user in a chat
+	SetUserRole(ctx context.Context, in *SetUserRoleRequest, opts ...grpc.CallOption) (*SetUserRoleResponse, error)
+	// RemoveUserRole removes a user's role from a chat
+	RemoveUserRole(ctx context.Context, in *RemoveUserRoleRequest, opts ...grpc.CallOption) (*RemoveUserRoleResponse, error)
+	// GetAllowedChats retrieves all allowed chats
+	GetAllowedChats(ctx context.Context, in *GetAllowedChatsRequest, opts ...grpc.CallOption) (*GetAllowedChatsResponse, error)
+	// AddAllowedChat adds a chat to the allowed list
+	AddAllowedChat(ctx context.Context, in *AddAllowedChatRequest, opts ...grpc.CallOption) (*AddAllowedChatResponse, error)
+	// RemoveAllowedChat removes a chat from the allowed list
+	RemoveAllowedChat(ctx context.Context, in *RemoveAllowedChatRequest, opts ...grpc.CallOption) (*RemoveAllowedChatResponse, error)
 }
 
 type adminServiceClient struct {
@@ -76,6 +94,66 @@ func (c *adminServiceClient) TriggerSummarization(ctx context.Context, in *Trigg
 	return out, nil
 }
 
+func (c *adminServiceClient) GetUserRoles(ctx context.Context, in *GetUserRolesRequest, opts ...grpc.CallOption) (*GetUserRolesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetUserRolesResponse)
+	err := c.cc.Invoke(ctx, AdminService_GetUserRoles_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) SetUserRole(ctx context.Context, in *SetUserRoleRequest, opts ...grpc.CallOption) (*SetUserRoleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SetUserRoleResponse)
+	err := c.cc.Invoke(ctx, AdminService_SetUserRole_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) RemoveUserRole(ctx context.Context, in *RemoveUserRoleRequest, opts ...grpc.CallOption) (*RemoveUserRoleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RemoveUserRoleResponse)
+	err := c.cc.Invoke(ctx, AdminService_RemoveUserRole_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) GetAllowedChats(ctx context.Context, in *GetAllowedChatsRequest, opts ...grpc.CallOption) (*GetAllowedChatsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetAllowedChatsResponse)
+	err := c.cc.Invoke(ctx, AdminService_GetAllowedChats_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) AddAllowedChat(ctx context.Context, in *AddAllowedChatRequest, opts ...grpc.CallOption) (*AddAllowedChatResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AddAllowedChatResponse)
+	err := c.cc.Invoke(ctx, AdminService_AddAllowedChat_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) RemoveAllowedChat(ctx context.Context, in *RemoveAllowedChatRequest, opts ...grpc.CallOption) (*RemoveAllowedChatResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RemoveAllowedChatResponse)
+	err := c.cc.Invoke(ctx, AdminService_RemoveAllowedChat_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminServiceServer is the server API for AdminService service.
 // All implementations must embed UnimplementedAdminServiceServer
 // for forward compatibility.
@@ -88,6 +166,18 @@ type AdminServiceServer interface {
 	GetUserSummary(context.Context, *GetUserSummaryRequest) (*GetUserSummaryResponse, error)
 	// TriggerSummarization manually triggers summarization for a chat
 	TriggerSummarization(context.Context, *TriggerSummarizationRequest) (*TriggerSummarizationResponse, error)
+	// GetUserRoles retrieves all user roles for a chat
+	GetUserRoles(context.Context, *GetUserRolesRequest) (*GetUserRolesResponse, error)
+	// SetUserRole assigns a role to a user in a chat
+	SetUserRole(context.Context, *SetUserRoleRequest) (*SetUserRoleResponse, error)
+	// RemoveUserRole removes a user's role from a chat
+	RemoveUserRole(context.Context, *RemoveUserRoleRequest) (*RemoveUserRoleResponse, error)
+	// GetAllowedChats retrieves all allowed chats
+	GetAllowedChats(context.Context, *GetAllowedChatsRequest) (*GetAllowedChatsResponse, error)
+	// AddAllowedChat adds a chat to the allowed list
+	AddAllowedChat(context.Context, *AddAllowedChatRequest) (*AddAllowedChatResponse, error)
+	// RemoveAllowedChat removes a chat from the allowed list
+	RemoveAllowedChat(context.Context, *RemoveAllowedChatRequest) (*RemoveAllowedChatResponse, error)
 	mustEmbedUnimplementedAdminServiceServer()
 }
 
@@ -106,6 +196,24 @@ func (UnimplementedAdminServiceServer) GetUserSummary(context.Context, *GetUserS
 }
 func (UnimplementedAdminServiceServer) TriggerSummarization(context.Context, *TriggerSummarizationRequest) (*TriggerSummarizationResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TriggerSummarization not implemented")
+}
+func (UnimplementedAdminServiceServer) GetUserRoles(context.Context, *GetUserRolesRequest) (*GetUserRolesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserRoles not implemented")
+}
+func (UnimplementedAdminServiceServer) SetUserRole(context.Context, *SetUserRoleRequest) (*SetUserRoleResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetUserRole not implemented")
+}
+func (UnimplementedAdminServiceServer) RemoveUserRole(context.Context, *RemoveUserRoleRequest) (*RemoveUserRoleResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RemoveUserRole not implemented")
+}
+func (UnimplementedAdminServiceServer) GetAllowedChats(context.Context, *GetAllowedChatsRequest) (*GetAllowedChatsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAllowedChats not implemented")
+}
+func (UnimplementedAdminServiceServer) AddAllowedChat(context.Context, *AddAllowedChatRequest) (*AddAllowedChatResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddAllowedChat not implemented")
+}
+func (UnimplementedAdminServiceServer) RemoveAllowedChat(context.Context, *RemoveAllowedChatRequest) (*RemoveAllowedChatResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RemoveAllowedChat not implemented")
 }
 func (UnimplementedAdminServiceServer) mustEmbedUnimplementedAdminServiceServer() {}
 func (UnimplementedAdminServiceServer) testEmbeddedByValue()                      {}
@@ -182,6 +290,114 @@ func _AdminService_TriggerSummarization_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminService_GetUserRoles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserRolesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).GetUserRoles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_GetUserRoles_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).GetUserRoles(ctx, req.(*GetUserRolesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_SetUserRole_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetUserRoleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).SetUserRole(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_SetUserRole_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).SetUserRole(ctx, req.(*SetUserRoleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_RemoveUserRole_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoveUserRoleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).RemoveUserRole(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_RemoveUserRole_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).RemoveUserRole(ctx, req.(*RemoveUserRoleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_GetAllowedChats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAllowedChatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).GetAllowedChats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_GetAllowedChats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).GetAllowedChats(ctx, req.(*GetAllowedChatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_AddAllowedChat_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddAllowedChatRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).AddAllowedChat(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_AddAllowedChat_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).AddAllowedChat(ctx, req.(*AddAllowedChatRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_RemoveAllowedChat_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoveAllowedChatRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).RemoveAllowedChat(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_RemoveAllowedChat_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).RemoveAllowedChat(ctx, req.(*RemoveAllowedChatRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminService_ServiceDesc is the grpc.ServiceDesc for AdminService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -200,6 +416,30 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "TriggerSummarization",
 			Handler:    _AdminService_TriggerSummarization_Handler,
+		},
+		{
+			MethodName: "GetUserRoles",
+			Handler:    _AdminService_GetUserRoles_Handler,
+		},
+		{
+			MethodName: "SetUserRole",
+			Handler:    _AdminService_SetUserRole_Handler,
+		},
+		{
+			MethodName: "RemoveUserRole",
+			Handler:    _AdminService_RemoveUserRole_Handler,
+		},
+		{
+			MethodName: "GetAllowedChats",
+			Handler:    _AdminService_GetAllowedChats_Handler,
+		},
+		{
+			MethodName: "AddAllowedChat",
+			Handler:    _AdminService_AddAllowedChat_Handler,
+		},
+		{
+			MethodName: "RemoveAllowedChat",
+			Handler:    _AdminService_RemoveAllowedChat_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

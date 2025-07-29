@@ -315,6 +315,42 @@ func (r *Repository) GetAllowedChats(ctx context.Context) ([]int64, error) {
 	return chatIDs, rows.Err()
 }
 
+// GetAllowedChatsDetailed returns all allowed chats with full information
+func (r *Repository) GetAllowedChatsDetailed(ctx context.Context) ([]*models.AllowedChat, error) {
+	query := `
+		SELECT id, chat_id, name, created_at
+		FROM allowed_chats 
+		ORDER BY created_at DESC
+	`
+
+	rows, err := r.pool.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query allowed chats: %w", err)
+	}
+	defer rows.Close()
+
+	var chats []*models.AllowedChat
+	for rows.Next() {
+		var chat models.AllowedChat
+		err := rows.Scan(
+			&chat.ID,
+			&chat.ChatID,
+			&chat.Name,
+			&chat.CreatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan allowed chat: %w", err)
+		}
+		chats = append(chats, &chat)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating allowed chats: %w", err)
+	}
+
+	return chats, nil
+}
+
 // AddAllowedChat adds a new chat to the allowed list
 func (r *Repository) AddAllowedChat(ctx context.Context, chatID int64, name string) error {
 	query := `
@@ -330,13 +366,42 @@ func (r *Repository) AddAllowedChat(ctx context.Context, chatID int64, name stri
 	return nil
 }
 
+// AddAllowedChatDetailed adds a new chat and returns the created record
+func (r *Repository) AddAllowedChatDetailed(ctx context.Context, chatID int64, name *string) (*models.AllowedChat, error) {
+	query := `
+		INSERT INTO allowed_chats (chat_id, name, created_at)
+		VALUES ($1, $2, now())
+		ON CONFLICT (chat_id) 
+		DO UPDATE SET 
+			name = EXCLUDED.name
+		RETURNING id, chat_id, name, created_at
+	`
+
+	var chat models.AllowedChat
+	err := r.pool.QueryRow(ctx, query, chatID, name).Scan(
+		&chat.ID,
+		&chat.ChatID,
+		&chat.Name,
+		&chat.CreatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to add allowed chat: %w", err)
+	}
+
+	return &chat, nil
+}
+
 // RemoveAllowedChat removes a chat from the allowed list
 func (r *Repository) RemoveAllowedChat(ctx context.Context, chatID int64) error {
 	query := `DELETE FROM allowed_chats WHERE chat_id = $1`
 
-	_, err := r.pool.Exec(ctx, query, chatID)
+	result, err := r.pool.Exec(ctx, query, chatID)
 	if err != nil {
 		return fmt.Errorf("failed to remove allowed chat: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return fmt.Errorf("allowed chat not found")
 	}
 
 	return nil
@@ -405,6 +470,97 @@ func (r *Repository) ResetAllMessageCounters(ctx context.Context) error {
 	_, err := r.pool.Exec(ctx, query, time.Now())
 	if err != nil {
 		return fmt.Errorf("failed to reset all message counters: %w", err)
+	}
+
+	return nil
+}
+
+// User roles operations
+
+// GetUserRolesByChatID retrieves all user roles for a specific chat
+func (r *Repository) GetUserRolesByChatID(ctx context.Context, chatID int64) ([]*models.UserRole, error) {
+	query := `
+		SELECT id, telegram_user_id, telegram_chat_id, role, expires_at, created_at, updated_at
+		FROM user_roles
+		WHERE telegram_chat_id = $1
+		ORDER BY created_at DESC
+	`
+
+	rows, err := r.pool.Query(ctx, query, chatID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query user roles: %w", err)
+	}
+	defer rows.Close()
+
+	var roles []*models.UserRole
+	for rows.Next() {
+		var role models.UserRole
+		err := rows.Scan(
+			&role.ID,
+			&role.TelegramUserID,
+			&role.TelegramChatID,
+			&role.Role,
+			&role.ExpiresAt,
+			&role.CreatedAt,
+			&role.UpdatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan user role: %w", err)
+		}
+		roles = append(roles, &role)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating user roles: %w", err)
+	}
+
+	return roles, nil
+}
+
+// SetUserRole creates or updates a user role in a chat
+func (r *Repository) SetUserRole(ctx context.Context, userID, chatID int64, role string, expiresAt *time.Time) (*models.UserRole, error) {
+	query := `
+		INSERT INTO user_roles (telegram_user_id, telegram_chat_id, role, expires_at, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, now(), now())
+		ON CONFLICT (telegram_user_id, telegram_chat_id)
+		DO UPDATE SET 
+			role = EXCLUDED.role,
+			expires_at = EXCLUDED.expires_at,
+			updated_at = now()
+		RETURNING id, telegram_user_id, telegram_chat_id, role, expires_at, created_at, updated_at
+	`
+
+	var userRole models.UserRole
+	err := r.pool.QueryRow(ctx, query, userID, chatID, role, expiresAt).Scan(
+		&userRole.ID,
+		&userRole.TelegramUserID,
+		&userRole.TelegramChatID,
+		&userRole.Role,
+		&userRole.ExpiresAt,
+		&userRole.CreatedAt,
+		&userRole.UpdatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to set user role: %w", err)
+	}
+
+	return &userRole, nil
+}
+
+// RemoveUserRole removes a user's role from a chat
+func (r *Repository) RemoveUserRole(ctx context.Context, userID, chatID int64) error {
+	query := `
+		DELETE FROM user_roles
+		WHERE telegram_user_id = $1 AND telegram_chat_id = $2
+	`
+
+	result, err := r.pool.Exec(ctx, query, userID, chatID)
+	if err != nil {
+		return fmt.Errorf("failed to remove user role: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return fmt.Errorf("user role not found")
 	}
 
 	return nil

@@ -224,6 +224,168 @@ func (x *UserSummary) GetUpdatedAt() *timestamppb.Timestamp {
 	return nil
 }
 
+// UserRole represents user role assignment in a chat
+type UserRole struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Id             int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	TelegramUserId int64                  `protobuf:"varint,2,opt,name=telegram_user_id,json=telegramUserId,proto3" json:"telegram_user_id,omitempty"`
+	TelegramChatId int64                  `protobuf:"varint,3,opt,name=telegram_chat_id,json=telegramChatId,proto3" json:"telegram_chat_id,omitempty"`
+	Role           string                 `protobuf:"bytes,4,opt,name=role,proto3" json:"role,omitempty"`
+	ExpiresAt      *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expires_at,json=expiresAt,proto3,oneof" json:"expires_at,omitempty"`
+	CreatedAt      *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt      *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *UserRole) Reset() {
+	*x = UserRole{}
+	mi := &file_william_admin_v1_admin_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UserRole) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UserRole) ProtoMessage() {}
+
+func (x *UserRole) ProtoReflect() protoreflect.Message {
+	mi := &file_william_admin_v1_admin_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UserRole.ProtoReflect.Descriptor instead.
+func (*UserRole) Descriptor() ([]byte, []int) {
+	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *UserRole) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *UserRole) GetTelegramUserId() int64 {
+	if x != nil {
+		return x.TelegramUserId
+	}
+	return 0
+}
+
+func (x *UserRole) GetTelegramChatId() int64 {
+	if x != nil {
+		return x.TelegramChatId
+	}
+	return 0
+}
+
+func (x *UserRole) GetRole() string {
+	if x != nil {
+		return x.Role
+	}
+	return ""
+}
+
+func (x *UserRole) GetExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return nil
+}
+
+func (x *UserRole) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *UserRole) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
+// AllowedChat represents a chat that is allowed to use the bot
+type AllowedChat struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	ChatId        int64                  `protobuf:"varint,2,opt,name=chat_id,json=chatId,proto3" json:"chat_id,omitempty"`
+	Name          *string                `protobuf:"bytes,3,opt,name=name,proto3,oneof" json:"name,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AllowedChat) Reset() {
+	*x = AllowedChat{}
+	mi := &file_william_admin_v1_admin_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AllowedChat) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AllowedChat) ProtoMessage() {}
+
+func (x *AllowedChat) ProtoReflect() protoreflect.Message {
+	mi := &file_william_admin_v1_admin_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AllowedChat.ProtoReflect.Descriptor instead.
+func (*AllowedChat) Descriptor() ([]byte, []int) {
+	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *AllowedChat) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *AllowedChat) GetChatId() int64 {
+	if x != nil {
+		return x.ChatId
+	}
+	return 0
+}
+
+func (x *AllowedChat) GetName() string {
+	if x != nil && x.Name != nil {
+		return *x.Name
+	}
+	return ""
+}
+
+func (x *AllowedChat) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
 // Chat summary requests and responses
 type GetChatSummaryRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -234,7 +396,7 @@ type GetChatSummaryRequest struct {
 
 func (x *GetChatSummaryRequest) Reset() {
 	*x = GetChatSummaryRequest{}
-	mi := &file_william_admin_v1_admin_proto_msgTypes[2]
+	mi := &file_william_admin_v1_admin_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -246,7 +408,7 @@ func (x *GetChatSummaryRequest) String() string {
 func (*GetChatSummaryRequest) ProtoMessage() {}
 
 func (x *GetChatSummaryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_william_admin_v1_admin_proto_msgTypes[2]
+	mi := &file_william_admin_v1_admin_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -259,7 +421,7 @@ func (x *GetChatSummaryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetChatSummaryRequest.ProtoReflect.Descriptor instead.
 func (*GetChatSummaryRequest) Descriptor() ([]byte, []int) {
-	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{2}
+	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *GetChatSummaryRequest) GetChatIds() []int64 {
@@ -278,7 +440,7 @@ type GetChatSummaryResponse struct {
 
 func (x *GetChatSummaryResponse) Reset() {
 	*x = GetChatSummaryResponse{}
-	mi := &file_william_admin_v1_admin_proto_msgTypes[3]
+	mi := &file_william_admin_v1_admin_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -290,7 +452,7 @@ func (x *GetChatSummaryResponse) String() string {
 func (*GetChatSummaryResponse) ProtoMessage() {}
 
 func (x *GetChatSummaryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_william_admin_v1_admin_proto_msgTypes[3]
+	mi := &file_william_admin_v1_admin_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -303,7 +465,7 @@ func (x *GetChatSummaryResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetChatSummaryResponse.ProtoReflect.Descriptor instead.
 func (*GetChatSummaryResponse) Descriptor() ([]byte, []int) {
-	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{3}
+	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *GetChatSummaryResponse) GetSummaries() []*ChatSummary {
@@ -324,7 +486,7 @@ type GetUserSummaryRequest struct {
 
 func (x *GetUserSummaryRequest) Reset() {
 	*x = GetUserSummaryRequest{}
-	mi := &file_william_admin_v1_admin_proto_msgTypes[4]
+	mi := &file_william_admin_v1_admin_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -336,7 +498,7 @@ func (x *GetUserSummaryRequest) String() string {
 func (*GetUserSummaryRequest) ProtoMessage() {}
 
 func (x *GetUserSummaryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_william_admin_v1_admin_proto_msgTypes[4]
+	mi := &file_william_admin_v1_admin_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -349,7 +511,7 @@ func (x *GetUserSummaryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetUserSummaryRequest.ProtoReflect.Descriptor instead.
 func (*GetUserSummaryRequest) Descriptor() ([]byte, []int) {
-	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{4}
+	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *GetUserSummaryRequest) GetChatId() int64 {
@@ -375,7 +537,7 @@ type GetUserSummaryResponse struct {
 
 func (x *GetUserSummaryResponse) Reset() {
 	*x = GetUserSummaryResponse{}
-	mi := &file_william_admin_v1_admin_proto_msgTypes[5]
+	mi := &file_william_admin_v1_admin_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -387,7 +549,7 @@ func (x *GetUserSummaryResponse) String() string {
 func (*GetUserSummaryResponse) ProtoMessage() {}
 
 func (x *GetUserSummaryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_william_admin_v1_admin_proto_msgTypes[5]
+	mi := &file_william_admin_v1_admin_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -400,7 +562,7 @@ func (x *GetUserSummaryResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetUserSummaryResponse.ProtoReflect.Descriptor instead.
 func (*GetUserSummaryResponse) Descriptor() ([]byte, []int) {
-	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{5}
+	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GetUserSummaryResponse) GetSummaries() []*UserSummary {
@@ -420,7 +582,7 @@ type TriggerSummarizationRequest struct {
 
 func (x *TriggerSummarizationRequest) Reset() {
 	*x = TriggerSummarizationRequest{}
-	mi := &file_william_admin_v1_admin_proto_msgTypes[6]
+	mi := &file_william_admin_v1_admin_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -432,7 +594,7 @@ func (x *TriggerSummarizationRequest) String() string {
 func (*TriggerSummarizationRequest) ProtoMessage() {}
 
 func (x *TriggerSummarizationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_william_admin_v1_admin_proto_msgTypes[6]
+	mi := &file_william_admin_v1_admin_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -445,7 +607,7 @@ func (x *TriggerSummarizationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TriggerSummarizationRequest.ProtoReflect.Descriptor instead.
 func (*TriggerSummarizationRequest) Descriptor() ([]byte, []int) {
-	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{6}
+	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *TriggerSummarizationRequest) GetChatId() int64 {
@@ -457,16 +619,14 @@ func (x *TriggerSummarizationRequest) GetChatId() int64 {
 
 type TriggerSummarizationResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	Message       *string                `protobuf:"bytes,2,opt,name=message,proto3,oneof" json:"message,omitempty"`
-	EventId       *string                `protobuf:"bytes,3,opt,name=event_id,json=eventId,proto3,oneof" json:"event_id,omitempty"` // Event ID for tracking execution
+	EventId       string                 `protobuf:"bytes,1,opt,name=event_id,json=eventId,proto3" json:"event_id,omitempty"` // Event ID for tracking execution
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TriggerSummarizationResponse) Reset() {
 	*x = TriggerSummarizationResponse{}
-	mi := &file_william_admin_v1_admin_proto_msgTypes[7]
+	mi := &file_william_admin_v1_admin_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -478,7 +638,7 @@ func (x *TriggerSummarizationResponse) String() string {
 func (*TriggerSummarizationResponse) ProtoMessage() {}
 
 func (x *TriggerSummarizationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_william_admin_v1_admin_proto_msgTypes[7]
+	mi := &file_william_admin_v1_admin_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -491,28 +651,560 @@ func (x *TriggerSummarizationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TriggerSummarizationResponse.ProtoReflect.Descriptor instead.
 func (*TriggerSummarizationResponse) Descriptor() ([]byte, []int) {
-	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{7}
-}
-
-func (x *TriggerSummarizationResponse) GetSuccess() bool {
-	if x != nil {
-		return x.Success
-	}
-	return false
-}
-
-func (x *TriggerSummarizationResponse) GetMessage() string {
-	if x != nil && x.Message != nil {
-		return *x.Message
-	}
-	return ""
+	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *TriggerSummarizationResponse) GetEventId() string {
-	if x != nil && x.EventId != nil {
-		return *x.EventId
+	if x != nil {
+		return x.EventId
 	}
 	return ""
+}
+
+// User roles requests and responses
+type GetUserRolesRequest struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	TelegramChatId int64                  `protobuf:"varint,1,opt,name=telegram_chat_id,json=telegramChatId,proto3" json:"telegram_chat_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *GetUserRolesRequest) Reset() {
+	*x = GetUserRolesRequest{}
+	mi := &file_william_admin_v1_admin_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUserRolesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUserRolesRequest) ProtoMessage() {}
+
+func (x *GetUserRolesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_william_admin_v1_admin_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUserRolesRequest.ProtoReflect.Descriptor instead.
+func (*GetUserRolesRequest) Descriptor() ([]byte, []int) {
+	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *GetUserRolesRequest) GetTelegramChatId() int64 {
+	if x != nil {
+		return x.TelegramChatId
+	}
+	return 0
+}
+
+type GetUserRolesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Roles         []*UserRole            `protobuf:"bytes,1,rep,name=roles,proto3" json:"roles,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUserRolesResponse) Reset() {
+	*x = GetUserRolesResponse{}
+	mi := &file_william_admin_v1_admin_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUserRolesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUserRolesResponse) ProtoMessage() {}
+
+func (x *GetUserRolesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_william_admin_v1_admin_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUserRolesResponse.ProtoReflect.Descriptor instead.
+func (*GetUserRolesResponse) Descriptor() ([]byte, []int) {
+	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *GetUserRolesResponse) GetRoles() []*UserRole {
+	if x != nil {
+		return x.Roles
+	}
+	return nil
+}
+
+type SetUserRoleRequest struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	TelegramUserId int64                  `protobuf:"varint,1,opt,name=telegram_user_id,json=telegramUserId,proto3" json:"telegram_user_id,omitempty"`
+	TelegramChatId int64                  `protobuf:"varint,2,opt,name=telegram_chat_id,json=telegramChatId,proto3" json:"telegram_chat_id,omitempty"`
+	Role           string                 `protobuf:"bytes,3,opt,name=role,proto3" json:"role,omitempty"`
+	ExpiresAt      *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=expires_at,json=expiresAt,proto3,oneof" json:"expires_at,omitempty"` // If null, role is permanent
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *SetUserRoleRequest) Reset() {
+	*x = SetUserRoleRequest{}
+	mi := &file_william_admin_v1_admin_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetUserRoleRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetUserRoleRequest) ProtoMessage() {}
+
+func (x *SetUserRoleRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_william_admin_v1_admin_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetUserRoleRequest.ProtoReflect.Descriptor instead.
+func (*SetUserRoleRequest) Descriptor() ([]byte, []int) {
+	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *SetUserRoleRequest) GetTelegramUserId() int64 {
+	if x != nil {
+		return x.TelegramUserId
+	}
+	return 0
+}
+
+func (x *SetUserRoleRequest) GetTelegramChatId() int64 {
+	if x != nil {
+		return x.TelegramChatId
+	}
+	return 0
+}
+
+func (x *SetUserRoleRequest) GetRole() string {
+	if x != nil {
+		return x.Role
+	}
+	return ""
+}
+
+func (x *SetUserRoleRequest) GetExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return nil
+}
+
+type SetUserRoleResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RoleId        int64                  `protobuf:"varint,1,opt,name=role_id,json=roleId,proto3" json:"role_id,omitempty"` // ID of created/updated role
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetUserRoleResponse) Reset() {
+	*x = SetUserRoleResponse{}
+	mi := &file_william_admin_v1_admin_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetUserRoleResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetUserRoleResponse) ProtoMessage() {}
+
+func (x *SetUserRoleResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_william_admin_v1_admin_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetUserRoleResponse.ProtoReflect.Descriptor instead.
+func (*SetUserRoleResponse) Descriptor() ([]byte, []int) {
+	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *SetUserRoleResponse) GetRoleId() int64 {
+	if x != nil {
+		return x.RoleId
+	}
+	return 0
+}
+
+type RemoveUserRoleRequest struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	TelegramUserId int64                  `protobuf:"varint,1,opt,name=telegram_user_id,json=telegramUserId,proto3" json:"telegram_user_id,omitempty"`
+	TelegramChatId int64                  `protobuf:"varint,2,opt,name=telegram_chat_id,json=telegramChatId,proto3" json:"telegram_chat_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *RemoveUserRoleRequest) Reset() {
+	*x = RemoveUserRoleRequest{}
+	mi := &file_william_admin_v1_admin_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemoveUserRoleRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoveUserRoleRequest) ProtoMessage() {}
+
+func (x *RemoveUserRoleRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_william_admin_v1_admin_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemoveUserRoleRequest.ProtoReflect.Descriptor instead.
+func (*RemoveUserRoleRequest) Descriptor() ([]byte, []int) {
+	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *RemoveUserRoleRequest) GetTelegramUserId() int64 {
+	if x != nil {
+		return x.TelegramUserId
+	}
+	return 0
+}
+
+func (x *RemoveUserRoleRequest) GetTelegramChatId() int64 {
+	if x != nil {
+		return x.TelegramChatId
+	}
+	return 0
+}
+
+type RemoveUserRoleResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RemoveUserRoleResponse) Reset() {
+	*x = RemoveUserRoleResponse{}
+	mi := &file_william_admin_v1_admin_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemoveUserRoleResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoveUserRoleResponse) ProtoMessage() {}
+
+func (x *RemoveUserRoleResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_william_admin_v1_admin_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemoveUserRoleResponse.ProtoReflect.Descriptor instead.
+func (*RemoveUserRoleResponse) Descriptor() ([]byte, []int) {
+	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{15}
+}
+
+// Allowed chats requests and responses
+type GetAllowedChatsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetAllowedChatsRequest) Reset() {
+	*x = GetAllowedChatsRequest{}
+	mi := &file_william_admin_v1_admin_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetAllowedChatsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAllowedChatsRequest) ProtoMessage() {}
+
+func (x *GetAllowedChatsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_william_admin_v1_admin_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAllowedChatsRequest.ProtoReflect.Descriptor instead.
+func (*GetAllowedChatsRequest) Descriptor() ([]byte, []int) {
+	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{16}
+}
+
+type GetAllowedChatsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Chats         []*AllowedChat         `protobuf:"bytes,1,rep,name=chats,proto3" json:"chats,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetAllowedChatsResponse) Reset() {
+	*x = GetAllowedChatsResponse{}
+	mi := &file_william_admin_v1_admin_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetAllowedChatsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAllowedChatsResponse) ProtoMessage() {}
+
+func (x *GetAllowedChatsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_william_admin_v1_admin_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAllowedChatsResponse.ProtoReflect.Descriptor instead.
+func (*GetAllowedChatsResponse) Descriptor() ([]byte, []int) {
+	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *GetAllowedChatsResponse) GetChats() []*AllowedChat {
+	if x != nil {
+		return x.Chats
+	}
+	return nil
+}
+
+type AddAllowedChatRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ChatId        int64                  `protobuf:"varint,1,opt,name=chat_id,json=chatId,proto3" json:"chat_id,omitempty"`
+	Name          *string                `protobuf:"bytes,2,opt,name=name,proto3,oneof" json:"name,omitempty"` // Optional chat name/description
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AddAllowedChatRequest) Reset() {
+	*x = AddAllowedChatRequest{}
+	mi := &file_william_admin_v1_admin_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AddAllowedChatRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AddAllowedChatRequest) ProtoMessage() {}
+
+func (x *AddAllowedChatRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_william_admin_v1_admin_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AddAllowedChatRequest.ProtoReflect.Descriptor instead.
+func (*AddAllowedChatRequest) Descriptor() ([]byte, []int) {
+	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *AddAllowedChatRequest) GetChatId() int64 {
+	if x != nil {
+		return x.ChatId
+	}
+	return 0
+}
+
+func (x *AddAllowedChatRequest) GetName() string {
+	if x != nil && x.Name != nil {
+		return *x.Name
+	}
+	return ""
+}
+
+type AddAllowedChatResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ChatId        int64                  `protobuf:"varint,1,opt,name=chat_id,json=chatId,proto3" json:"chat_id,omitempty"` // ID of created/updated chat record
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AddAllowedChatResponse) Reset() {
+	*x = AddAllowedChatResponse{}
+	mi := &file_william_admin_v1_admin_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AddAllowedChatResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AddAllowedChatResponse) ProtoMessage() {}
+
+func (x *AddAllowedChatResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_william_admin_v1_admin_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AddAllowedChatResponse.ProtoReflect.Descriptor instead.
+func (*AddAllowedChatResponse) Descriptor() ([]byte, []int) {
+	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *AddAllowedChatResponse) GetChatId() int64 {
+	if x != nil {
+		return x.ChatId
+	}
+	return 0
+}
+
+type RemoveAllowedChatRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ChatId        int64                  `protobuf:"varint,1,opt,name=chat_id,json=chatId,proto3" json:"chat_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RemoveAllowedChatRequest) Reset() {
+	*x = RemoveAllowedChatRequest{}
+	mi := &file_william_admin_v1_admin_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemoveAllowedChatRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoveAllowedChatRequest) ProtoMessage() {}
+
+func (x *RemoveAllowedChatRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_william_admin_v1_admin_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemoveAllowedChatRequest.ProtoReflect.Descriptor instead.
+func (*RemoveAllowedChatRequest) Descriptor() ([]byte, []int) {
+	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *RemoveAllowedChatRequest) GetChatId() int64 {
+	if x != nil {
+		return x.ChatId
+	}
+	return 0
+}
+
+type RemoveAllowedChatResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RemoveAllowedChatResponse) Reset() {
+	*x = RemoveAllowedChatResponse{}
+	mi := &file_william_admin_v1_admin_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemoveAllowedChatResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoveAllowedChatResponse) ProtoMessage() {}
+
+func (x *RemoveAllowedChatResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_william_admin_v1_admin_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemoveAllowedChatResponse.ProtoReflect.Descriptor instead.
+func (*RemoveAllowedChatResponse) Descriptor() ([]byte, []int) {
+	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{21}
 }
 
 var File_william_admin_v1_admin_proto protoreflect.FileDescriptor
@@ -557,7 +1249,26 @@ const file_william_admin_v1_admin_proto_rawDesc = "" +
 	"\x11CompetenciesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\t\n" +
-	"\a_traits\"2\n" +
+	"\a_traits\"\xc7\x02\n" +
+	"\bUserRole\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12(\n" +
+	"\x10telegram_user_id\x18\x02 \x01(\x03R\x0etelegramUserId\x12(\n" +
+	"\x10telegram_chat_id\x18\x03 \x01(\x03R\x0etelegramChatId\x12\x12\n" +
+	"\x04role\x18\x04 \x01(\tR\x04role\x12>\n" +
+	"\n" +
+	"expires_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampH\x00R\texpiresAt\x88\x01\x01\x129\n" +
+	"\n" +
+	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"\n" +
+	"updated_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAtB\r\n" +
+	"\v_expires_at\"\x93\x01\n" +
+	"\vAllowedChat\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x17\n" +
+	"\achat_id\x18\x02 \x01(\x03R\x06chatId\x12\x17\n" +
+	"\x04name\x18\x03 \x01(\tH\x00R\x04name\x88\x01\x01\x129\n" +
+	"\n" +
+	"created_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAtB\a\n" +
+	"\x05_name\"2\n" +
 	"\x15GetChatSummaryRequest\x12\x19\n" +
 	"\bchat_ids\x18\x01 \x03(\x03R\achatIds\"U\n" +
 	"\x16GetChatSummaryResponse\x12;\n" +
@@ -568,18 +1279,48 @@ const file_william_admin_v1_admin_proto_rawDesc = "" +
 	"\x16GetUserSummaryResponse\x12;\n" +
 	"\tsummaries\x18\x01 \x03(\v2\x1d.william.admin.v1.UserSummaryR\tsummaries\"6\n" +
 	"\x1bTriggerSummarizationRequest\x12\x17\n" +
-	"\achat_id\x18\x01 \x01(\x03R\x06chatId\"\x90\x01\n" +
-	"\x1cTriggerSummarizationResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x1d\n" +
-	"\amessage\x18\x02 \x01(\tH\x00R\amessage\x88\x01\x01\x12\x1e\n" +
-	"\bevent_id\x18\x03 \x01(\tH\x01R\aeventId\x88\x01\x01B\n" +
+	"\achat_id\x18\x01 \x01(\x03R\x06chatId\"9\n" +
+	"\x1cTriggerSummarizationResponse\x12\x19\n" +
+	"\bevent_id\x18\x01 \x01(\tR\aeventId\"?\n" +
+	"\x13GetUserRolesRequest\x12(\n" +
+	"\x10telegram_chat_id\x18\x01 \x01(\x03R\x0etelegramChatId\"H\n" +
+	"\x14GetUserRolesResponse\x120\n" +
+	"\x05roles\x18\x01 \x03(\v2\x1a.william.admin.v1.UserRoleR\x05roles\"\xcb\x01\n" +
+	"\x12SetUserRoleRequest\x12(\n" +
+	"\x10telegram_user_id\x18\x01 \x01(\x03R\x0etelegramUserId\x12(\n" +
+	"\x10telegram_chat_id\x18\x02 \x01(\x03R\x0etelegramChatId\x12\x12\n" +
+	"\x04role\x18\x03 \x01(\tR\x04role\x12>\n" +
 	"\n" +
-	"\b_messageB\v\n" +
-	"\t_event_id2\xcf\x02\n" +
+	"expires_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampH\x00R\texpiresAt\x88\x01\x01B\r\n" +
+	"\v_expires_at\".\n" +
+	"\x13SetUserRoleResponse\x12\x17\n" +
+	"\arole_id\x18\x01 \x01(\x03R\x06roleId\"k\n" +
+	"\x15RemoveUserRoleRequest\x12(\n" +
+	"\x10telegram_user_id\x18\x01 \x01(\x03R\x0etelegramUserId\x12(\n" +
+	"\x10telegram_chat_id\x18\x02 \x01(\x03R\x0etelegramChatId\"\x18\n" +
+	"\x16RemoveUserRoleResponse\"\x18\n" +
+	"\x16GetAllowedChatsRequest\"N\n" +
+	"\x17GetAllowedChatsResponse\x123\n" +
+	"\x05chats\x18\x01 \x03(\v2\x1d.william.admin.v1.AllowedChatR\x05chats\"R\n" +
+	"\x15AddAllowedChatRequest\x12\x17\n" +
+	"\achat_id\x18\x01 \x01(\x03R\x06chatId\x12\x17\n" +
+	"\x04name\x18\x02 \x01(\tH\x00R\x04name\x88\x01\x01B\a\n" +
+	"\x05_name\"1\n" +
+	"\x16AddAllowedChatResponse\x12\x17\n" +
+	"\achat_id\x18\x01 \x01(\x03R\x06chatId\"3\n" +
+	"\x18RemoveAllowedChatRequest\x12\x17\n" +
+	"\achat_id\x18\x01 \x01(\x03R\x06chatId\"\x1b\n" +
+	"\x19RemoveAllowedChatResponse2\xaa\a\n" +
 	"\fAdminService\x12c\n" +
 	"\x0eGetChatSummary\x12'.william.admin.v1.GetChatSummaryRequest\x1a(.william.admin.v1.GetChatSummaryResponse\x12c\n" +
 	"\x0eGetUserSummary\x12'.william.admin.v1.GetUserSummaryRequest\x1a(.william.admin.v1.GetUserSummaryResponse\x12u\n" +
-	"\x14TriggerSummarization\x12-.william.admin.v1.TriggerSummarizationRequest\x1a..william.admin.v1.TriggerSummarizationResponseB(Z&github.com/xdefrag/william/pkg/adminpbb\x06proto3"
+	"\x14TriggerSummarization\x12-.william.admin.v1.TriggerSummarizationRequest\x1a..william.admin.v1.TriggerSummarizationResponse\x12]\n" +
+	"\fGetUserRoles\x12%.william.admin.v1.GetUserRolesRequest\x1a&.william.admin.v1.GetUserRolesResponse\x12Z\n" +
+	"\vSetUserRole\x12$.william.admin.v1.SetUserRoleRequest\x1a%.william.admin.v1.SetUserRoleResponse\x12c\n" +
+	"\x0eRemoveUserRole\x12'.william.admin.v1.RemoveUserRoleRequest\x1a(.william.admin.v1.RemoveUserRoleResponse\x12f\n" +
+	"\x0fGetAllowedChats\x12(.william.admin.v1.GetAllowedChatsRequest\x1a).william.admin.v1.GetAllowedChatsResponse\x12c\n" +
+	"\x0eAddAllowedChat\x12'.william.admin.v1.AddAllowedChatRequest\x1a(.william.admin.v1.AddAllowedChatResponse\x12l\n" +
+	"\x11RemoveAllowedChat\x12*.william.admin.v1.RemoveAllowedChatRequest\x1a+.william.admin.v1.RemoveAllowedChatResponseB(Z&github.com/xdefrag/william/pkg/adminpbb\x06proto3"
 
 var (
 	file_william_admin_v1_admin_proto_rawDescOnce sync.Once
@@ -593,44 +1334,77 @@ func file_william_admin_v1_admin_proto_rawDescGZIP() []byte {
 	return file_william_admin_v1_admin_proto_rawDescData
 }
 
-var file_william_admin_v1_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_william_admin_v1_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
 var file_william_admin_v1_admin_proto_goTypes = []any{
 	(*ChatSummary)(nil),                  // 0: william.admin.v1.ChatSummary
 	(*UserSummary)(nil),                  // 1: william.admin.v1.UserSummary
-	(*GetChatSummaryRequest)(nil),        // 2: william.admin.v1.GetChatSummaryRequest
-	(*GetChatSummaryResponse)(nil),       // 3: william.admin.v1.GetChatSummaryResponse
-	(*GetUserSummaryRequest)(nil),        // 4: william.admin.v1.GetUserSummaryRequest
-	(*GetUserSummaryResponse)(nil),       // 5: william.admin.v1.GetUserSummaryResponse
-	(*TriggerSummarizationRequest)(nil),  // 6: william.admin.v1.TriggerSummarizationRequest
-	(*TriggerSummarizationResponse)(nil), // 7: william.admin.v1.TriggerSummarizationResponse
-	nil,                                  // 8: william.admin.v1.ChatSummary.TopicsEntry
-	nil,                                  // 9: william.admin.v1.UserSummary.LikesEntry
-	nil,                                  // 10: william.admin.v1.UserSummary.DislikesEntry
-	nil,                                  // 11: william.admin.v1.UserSummary.CompetenciesEntry
-	(*timestamppb.Timestamp)(nil),        // 12: google.protobuf.Timestamp
+	(*UserRole)(nil),                     // 2: william.admin.v1.UserRole
+	(*AllowedChat)(nil),                  // 3: william.admin.v1.AllowedChat
+	(*GetChatSummaryRequest)(nil),        // 4: william.admin.v1.GetChatSummaryRequest
+	(*GetChatSummaryResponse)(nil),       // 5: william.admin.v1.GetChatSummaryResponse
+	(*GetUserSummaryRequest)(nil),        // 6: william.admin.v1.GetUserSummaryRequest
+	(*GetUserSummaryResponse)(nil),       // 7: william.admin.v1.GetUserSummaryResponse
+	(*TriggerSummarizationRequest)(nil),  // 8: william.admin.v1.TriggerSummarizationRequest
+	(*TriggerSummarizationResponse)(nil), // 9: william.admin.v1.TriggerSummarizationResponse
+	(*GetUserRolesRequest)(nil),          // 10: william.admin.v1.GetUserRolesRequest
+	(*GetUserRolesResponse)(nil),         // 11: william.admin.v1.GetUserRolesResponse
+	(*SetUserRoleRequest)(nil),           // 12: william.admin.v1.SetUserRoleRequest
+	(*SetUserRoleResponse)(nil),          // 13: william.admin.v1.SetUserRoleResponse
+	(*RemoveUserRoleRequest)(nil),        // 14: william.admin.v1.RemoveUserRoleRequest
+	(*RemoveUserRoleResponse)(nil),       // 15: william.admin.v1.RemoveUserRoleResponse
+	(*GetAllowedChatsRequest)(nil),       // 16: william.admin.v1.GetAllowedChatsRequest
+	(*GetAllowedChatsResponse)(nil),      // 17: william.admin.v1.GetAllowedChatsResponse
+	(*AddAllowedChatRequest)(nil),        // 18: william.admin.v1.AddAllowedChatRequest
+	(*AddAllowedChatResponse)(nil),       // 19: william.admin.v1.AddAllowedChatResponse
+	(*RemoveAllowedChatRequest)(nil),     // 20: william.admin.v1.RemoveAllowedChatRequest
+	(*RemoveAllowedChatResponse)(nil),    // 21: william.admin.v1.RemoveAllowedChatResponse
+	nil,                                  // 22: william.admin.v1.ChatSummary.TopicsEntry
+	nil,                                  // 23: william.admin.v1.UserSummary.LikesEntry
+	nil,                                  // 24: william.admin.v1.UserSummary.DislikesEntry
+	nil,                                  // 25: william.admin.v1.UserSummary.CompetenciesEntry
+	(*timestamppb.Timestamp)(nil),        // 26: google.protobuf.Timestamp
 }
 var file_william_admin_v1_admin_proto_depIdxs = []int32{
-	8,  // 0: william.admin.v1.ChatSummary.topics:type_name -> william.admin.v1.ChatSummary.TopicsEntry
-	12, // 1: william.admin.v1.ChatSummary.created_at:type_name -> google.protobuf.Timestamp
-	12, // 2: william.admin.v1.ChatSummary.updated_at:type_name -> google.protobuf.Timestamp
-	9,  // 3: william.admin.v1.UserSummary.likes:type_name -> william.admin.v1.UserSummary.LikesEntry
-	10, // 4: william.admin.v1.UserSummary.dislikes:type_name -> william.admin.v1.UserSummary.DislikesEntry
-	11, // 5: william.admin.v1.UserSummary.competencies:type_name -> william.admin.v1.UserSummary.CompetenciesEntry
-	12, // 6: william.admin.v1.UserSummary.created_at:type_name -> google.protobuf.Timestamp
-	12, // 7: william.admin.v1.UserSummary.updated_at:type_name -> google.protobuf.Timestamp
-	0,  // 8: william.admin.v1.GetChatSummaryResponse.summaries:type_name -> william.admin.v1.ChatSummary
-	1,  // 9: william.admin.v1.GetUserSummaryResponse.summaries:type_name -> william.admin.v1.UserSummary
-	2,  // 10: william.admin.v1.AdminService.GetChatSummary:input_type -> william.admin.v1.GetChatSummaryRequest
-	4,  // 11: william.admin.v1.AdminService.GetUserSummary:input_type -> william.admin.v1.GetUserSummaryRequest
-	6,  // 12: william.admin.v1.AdminService.TriggerSummarization:input_type -> william.admin.v1.TriggerSummarizationRequest
-	3,  // 13: william.admin.v1.AdminService.GetChatSummary:output_type -> william.admin.v1.GetChatSummaryResponse
-	5,  // 14: william.admin.v1.AdminService.GetUserSummary:output_type -> william.admin.v1.GetUserSummaryResponse
-	7,  // 15: william.admin.v1.AdminService.TriggerSummarization:output_type -> william.admin.v1.TriggerSummarizationResponse
-	13, // [13:16] is the sub-list for method output_type
-	10, // [10:13] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	22, // 0: william.admin.v1.ChatSummary.topics:type_name -> william.admin.v1.ChatSummary.TopicsEntry
+	26, // 1: william.admin.v1.ChatSummary.created_at:type_name -> google.protobuf.Timestamp
+	26, // 2: william.admin.v1.ChatSummary.updated_at:type_name -> google.protobuf.Timestamp
+	23, // 3: william.admin.v1.UserSummary.likes:type_name -> william.admin.v1.UserSummary.LikesEntry
+	24, // 4: william.admin.v1.UserSummary.dislikes:type_name -> william.admin.v1.UserSummary.DislikesEntry
+	25, // 5: william.admin.v1.UserSummary.competencies:type_name -> william.admin.v1.UserSummary.CompetenciesEntry
+	26, // 6: william.admin.v1.UserSummary.created_at:type_name -> google.protobuf.Timestamp
+	26, // 7: william.admin.v1.UserSummary.updated_at:type_name -> google.protobuf.Timestamp
+	26, // 8: william.admin.v1.UserRole.expires_at:type_name -> google.protobuf.Timestamp
+	26, // 9: william.admin.v1.UserRole.created_at:type_name -> google.protobuf.Timestamp
+	26, // 10: william.admin.v1.UserRole.updated_at:type_name -> google.protobuf.Timestamp
+	26, // 11: william.admin.v1.AllowedChat.created_at:type_name -> google.protobuf.Timestamp
+	0,  // 12: william.admin.v1.GetChatSummaryResponse.summaries:type_name -> william.admin.v1.ChatSummary
+	1,  // 13: william.admin.v1.GetUserSummaryResponse.summaries:type_name -> william.admin.v1.UserSummary
+	2,  // 14: william.admin.v1.GetUserRolesResponse.roles:type_name -> william.admin.v1.UserRole
+	26, // 15: william.admin.v1.SetUserRoleRequest.expires_at:type_name -> google.protobuf.Timestamp
+	3,  // 16: william.admin.v1.GetAllowedChatsResponse.chats:type_name -> william.admin.v1.AllowedChat
+	4,  // 17: william.admin.v1.AdminService.GetChatSummary:input_type -> william.admin.v1.GetChatSummaryRequest
+	6,  // 18: william.admin.v1.AdminService.GetUserSummary:input_type -> william.admin.v1.GetUserSummaryRequest
+	8,  // 19: william.admin.v1.AdminService.TriggerSummarization:input_type -> william.admin.v1.TriggerSummarizationRequest
+	10, // 20: william.admin.v1.AdminService.GetUserRoles:input_type -> william.admin.v1.GetUserRolesRequest
+	12, // 21: william.admin.v1.AdminService.SetUserRole:input_type -> william.admin.v1.SetUserRoleRequest
+	14, // 22: william.admin.v1.AdminService.RemoveUserRole:input_type -> william.admin.v1.RemoveUserRoleRequest
+	16, // 23: william.admin.v1.AdminService.GetAllowedChats:input_type -> william.admin.v1.GetAllowedChatsRequest
+	18, // 24: william.admin.v1.AdminService.AddAllowedChat:input_type -> william.admin.v1.AddAllowedChatRequest
+	20, // 25: william.admin.v1.AdminService.RemoveAllowedChat:input_type -> william.admin.v1.RemoveAllowedChatRequest
+	5,  // 26: william.admin.v1.AdminService.GetChatSummary:output_type -> william.admin.v1.GetChatSummaryResponse
+	7,  // 27: william.admin.v1.AdminService.GetUserSummary:output_type -> william.admin.v1.GetUserSummaryResponse
+	9,  // 28: william.admin.v1.AdminService.TriggerSummarization:output_type -> william.admin.v1.TriggerSummarizationResponse
+	11, // 29: william.admin.v1.AdminService.GetUserRoles:output_type -> william.admin.v1.GetUserRolesResponse
+	13, // 30: william.admin.v1.AdminService.SetUserRole:output_type -> william.admin.v1.SetUserRoleResponse
+	15, // 31: william.admin.v1.AdminService.RemoveUserRole:output_type -> william.admin.v1.RemoveUserRoleResponse
+	17, // 32: william.admin.v1.AdminService.GetAllowedChats:output_type -> william.admin.v1.GetAllowedChatsResponse
+	19, // 33: william.admin.v1.AdminService.AddAllowedChat:output_type -> william.admin.v1.AddAllowedChatResponse
+	21, // 34: william.admin.v1.AdminService.RemoveAllowedChat:output_type -> william.admin.v1.RemoveAllowedChatResponse
+	26, // [26:35] is the sub-list for method output_type
+	17, // [17:26] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_william_admin_v1_admin_proto_init() }
@@ -640,14 +1414,17 @@ func file_william_admin_v1_admin_proto_init() {
 	}
 	file_william_admin_v1_admin_proto_msgTypes[0].OneofWrappers = []any{}
 	file_william_admin_v1_admin_proto_msgTypes[1].OneofWrappers = []any{}
-	file_william_admin_v1_admin_proto_msgTypes[7].OneofWrappers = []any{}
+	file_william_admin_v1_admin_proto_msgTypes[2].OneofWrappers = []any{}
+	file_william_admin_v1_admin_proto_msgTypes[3].OneofWrappers = []any{}
+	file_william_admin_v1_admin_proto_msgTypes[12].OneofWrappers = []any{}
+	file_william_admin_v1_admin_proto_msgTypes[18].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_william_admin_v1_admin_proto_rawDesc), len(file_william_admin_v1_admin_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   12,
+			NumMessages:   26,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
