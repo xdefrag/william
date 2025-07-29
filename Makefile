@@ -14,6 +14,16 @@ build:
 	@mkdir -p $(BUILD_DIR)
 	go build -o $(BUILD_DIR)/$(APP_NAME) ./cmd/william
 
+# Build CLI client
+build-cli:
+	@echo "Building williamc CLI..."
+	@mkdir -p $(BUILD_DIR)
+	go build -o $(BUILD_DIR)/williamc ./cmd/williamc
+
+# Build both applications
+build-all: build build-cli
+	@echo "All applications built successfully!"
+
 # Generate protobuf code
 proto-gen:
 	@echo "Generating protobuf code..."
@@ -191,6 +201,8 @@ help:
 	@echo ""
 	@echo "Development:"
 	@echo "  build           Build the application"
+	@echo "  build-cli       Build williamc CLI client"
+	@echo "  build-all       Build both william and williamc"
 	@echo "  run             Run the application"
 	@echo "  dev             Start development mode with hot reload"
 	@echo "  setup-dev       Setup development environment"

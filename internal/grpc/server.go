@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc/reflection"
 
 	"github.com/ThreeDotsLabs/watermill/message"
+	"github.com/xdefrag/william/internal/auth"
 	"github.com/xdefrag/william/internal/config"
 	"github.com/xdefrag/william/internal/repo"
 	"github.com/xdefrag/william/pkg/adminpb"
@@ -35,10 +36,14 @@ func New(cfg *config.Config, repository *repo.Repository, publisher message.Publ
 		return nil, fmt.Errorf("failed to listen on port %d: %w", cfg.App.GRPC.Port, err)
 	}
 
+	// Create JWT manager
+	jwtManager := auth.NewJWTManager(cfg.JWTSecret)
+
 	// Create gRPC server with interceptors
 	server := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
 			loggingInterceptor(logger),
+			authInterceptor(jwtManager, logger),
 			errorHandlingInterceptor(logger),
 		),
 	)

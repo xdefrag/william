@@ -54,6 +54,7 @@ type Config struct {
 	TelegramBotToken string
 	OpenAIAPIKey     string
 	PostgresDSN      string
+	JWTSecret        string
 
 	// Application settings from TOML
 	App AppConfig
@@ -77,6 +78,7 @@ func Load() (*Config, error) {
 		TelegramBotToken: os.Getenv("TG_BOT_TOKEN"),
 		OpenAIAPIKey:     os.Getenv("OPENAI_API_KEY"),
 		PostgresDSN:      os.Getenv("PG_DSN"),
+		JWTSecret:        os.Getenv("JWT_SECRET"),
 		App:              *appCfg,
 	}
 
@@ -110,6 +112,9 @@ func Load() (*Config, error) {
 	}
 	if cfg.PostgresDSN == "" {
 		return nil, fmt.Errorf("PG_DSN is required")
+	}
+	if cfg.JWTSecret == "" {
+		return nil, fmt.Errorf("JWT_SECRET is required")
 	}
 
 	// Parse timezone
