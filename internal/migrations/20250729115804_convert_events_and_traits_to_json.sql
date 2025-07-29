@@ -12,17 +12,19 @@ UPDATE chat_summaries
 SET next_events_json = 
   CASE 
     WHEN next_events IS NOT NULL AND next_events != '' THEN
-      '[{"title": "' || replace(next_events, '"', '\"') || '", "date": null}]'::jsonb
+      jsonb_build_array(
+        jsonb_build_object('title', next_events, 'date', null)
+      )
     ELSE '[]'::jsonb
   END
 WHERE next_events_json = '[]'::jsonb;
 
--- For traits: convert simple text to JSON object with text field
+-- For traits: convert simple text to JSON object with description field
 UPDATE user_summaries 
 SET traits_json = 
   CASE 
     WHEN traits IS NOT NULL AND traits != '' THEN
-      '{"description": "' || replace(traits, '"', '\"') || '"}'::jsonb
+      jsonb_build_object('description', traits)
     ELSE '{}'::jsonb
   END
 WHERE traits_json = '{}'::jsonb;
