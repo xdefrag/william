@@ -163,6 +163,52 @@ func (r *Repository) GetLatestChatSummary(ctx context.Context, chatID int64) (*m
 	return summary, nil
 }
 
+// GetAllUserSummariesByChatID returns all user summaries for a specific chat
+func (r *Repository) GetAllUserSummariesByChatID(ctx context.Context, chatID int64) ([]*models.UserSummary, error) {
+	query := `
+		SELECT id, chat_id, user_id, likes_json, dislikes_json, competencies_json, traits, created_at, updated_at
+		FROM user_summaries 
+		WHERE chat_id = $1 
+		ORDER BY updated_at DESC`
+
+	rows, err := r.pool.Query(ctx, query, chatID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query user summaries: %w", err)
+	}
+	defer rows.Close()
+
+	var summaries []*models.UserSummary
+	for rows.Next() {
+		summary := &models.UserSummary{}
+		var likesJSON, dislikesJSON, competenciesJSON []byte
+
+		err := rows.Scan(&summary.ID, &summary.ChatID, &summary.UserID, &likesJSON, &dislikesJSON, &competenciesJSON, &summary.Traits, &summary.CreatedAt, &summary.UpdatedAt)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan user summary: %w", err)
+		}
+
+		if err := json.Unmarshal(likesJSON, &summary.LikesJSON); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal likes JSON: %w", err)
+		}
+
+		if err := json.Unmarshal(dislikesJSON, &summary.DislikesJSON); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal dislikes JSON: %w", err)
+		}
+
+		if err := json.Unmarshal(competenciesJSON, &summary.CompetenciesJSON); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal competencies JSON: %w", err)
+		}
+
+		summaries = append(summaries, summary)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating user summaries: %w", err)
+	}
+
+	return summaries, nil
+}
+
 // User summaries operations
 
 func (r *Repository) SaveUserSummary(ctx context.Context, summary *models.UserSummary) error {

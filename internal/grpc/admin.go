@@ -83,9 +83,6 @@ func (s *AdminService) GetUserSummary(ctx context.Context, req *adminpb.GetUserS
 	if req.ChatId == 0 {
 		return nil, status.Error(codes.InvalidArgument, "chat_id is required")
 	}
-	if len(req.UserIds) == 0 {
-		return nil, status.Error(codes.InvalidArgument, "at least one user_id is required")
-	}
 
 	// Check view permissions for the chat
 	if err := s.checkChatPermission(ctx, req.ChatId, false); err != nil {
@@ -93,19 +90,37 @@ func (s *AdminService) GetUserSummary(ctx context.Context, req *adminpb.GetUserS
 	}
 
 	var summaries []*adminpb.UserSummary
-	for _, userID := range req.UserIds {
-		summary, err := s.repo.GetLatestUserSummary(ctx, req.ChatId, userID)
+
+	// If no specific user IDs provided, get all user summaries for the chat
+	if len(req.UserIds) == 0 {
+		allSummaries, err := s.repo.GetAllUserSummariesByChatID(ctx, req.ChatId)
 		if err != nil {
-			s.logger.Error("Failed to get user summary",
+			s.logger.Error("Failed to get all user summaries",
 				slog.Int64("chat_id", req.ChatId),
-				slog.Int64("user_id", userID),
 				slog.String("error", err.Error()),
 			)
-			continue // Skip failed summaries
+			return nil, status.Error(codes.Internal, "failed to retrieve user summaries")
 		}
 
-		if summary != nil {
+		for _, summary := range allSummaries {
 			summaries = append(summaries, s.userSummaryToProto(summary))
+		}
+	} else {
+		// Get summaries for specific user IDs
+		for _, userID := range req.UserIds {
+			summary, err := s.repo.GetLatestUserSummary(ctx, req.ChatId, userID)
+			if err != nil {
+				s.logger.Error("Failed to get user summary",
+					slog.Int64("chat_id", req.ChatId),
+					slog.Int64("user_id", userID),
+					slog.String("error", err.Error()),
+				)
+				continue // Skip failed summaries
+			}
+
+			if summary != nil {
+				summaries = append(summaries, s.userSummaryToProto(summary))
+			}
 		}
 	}
 
