@@ -51,15 +51,15 @@ type SummarizeResponse struct {
 type ChatSummaryData struct {
 	Summary    string         `json:"summary"`
 	Topics     map[string]int `json:"topics"`
-	NextEvents string         `json:"next_events"`
+	NextEvents []models.Event `json:"next_events"`
 }
 
 // UserProfileData contains user-level profile information
 type UserProfileData struct {
-	Likes        map[string]int `json:"likes"`
-	Dislikes     map[string]int `json:"dislikes"`
-	Competencies map[string]int `json:"competencies"`
-	Traits       string         `json:"traits"`
+	Likes        map[string]int   `json:"likes"`
+	Dislikes     map[string]int   `json:"dislikes"`
+	Competencies map[string]int   `json:"competencies"`
+	Traits       models.UserTrait `json:"traits"`
 }
 
 // ContextRequest represents request for context-aware response
@@ -109,7 +109,12 @@ func (c *Client) Summarize(ctx context.Context, req SummarizeRequest) (*Summariz
 		}
 
 		if req.ExistingChatSummary.NextEvents != nil {
-			userPrompt += fmt.Sprintf("Next events: %s\n", *req.ExistingChatSummary.NextEvents)
+			userPrompt += fmt.Sprintf("Next events (legacy): %s\n", *req.ExistingChatSummary.NextEvents)
+		}
+
+		if len(req.ExistingChatSummary.NextEventsJSON) > 0 {
+			eventsJSON, _ := json.Marshal(req.ExistingChatSummary.NextEventsJSON)
+			userPrompt += fmt.Sprintf("Next events: %s\n", string(eventsJSON))
 		}
 		userPrompt += "\n"
 	}
@@ -136,7 +141,12 @@ func (c *Client) Summarize(ctx context.Context, req SummarizeRequest) (*Summariz
 			}
 
 			if summary.Traits != nil {
-				userPrompt += fmt.Sprintf("  Traits: %s\n", *summary.Traits)
+				userPrompt += fmt.Sprintf("  Traits (legacy): %s\n", *summary.Traits)
+			}
+
+			if len(summary.TraitsJSON) > 0 {
+				traitsJSON, _ := json.Marshal(summary.TraitsJSON)
+				userPrompt += fmt.Sprintf("  Traits: %s\n", string(traitsJSON))
 			}
 			userPrompt += "\n"
 		}
@@ -190,7 +200,12 @@ func (c *Client) GenerateResponse(ctx context.Context, req ContextRequest) (stri
 		systemPrompt += fmt.Sprintf("\n\nChat context:\nSummary: %s", req.ChatSummary.Summary)
 
 		if req.ChatSummary.NextEvents != nil {
-			systemPrompt += fmt.Sprintf("\nUpcoming events: %s", *req.ChatSummary.NextEvents)
+			systemPrompt += fmt.Sprintf("\nUpcoming events (legacy): %s", *req.ChatSummary.NextEvents)
+		}
+
+		if len(req.ChatSummary.NextEventsJSON) > 0 {
+			eventsJSON, _ := json.Marshal(req.ChatSummary.NextEventsJSON)
+			systemPrompt += fmt.Sprintf("\nUpcoming events: %s", string(eventsJSON))
 		}
 
 		if len(req.ChatSummary.TopicsJSON) > 0 {
@@ -219,7 +234,12 @@ func (c *Client) GenerateResponse(ctx context.Context, req ContextRequest) (stri
 		}
 
 		if req.UserSummary.Traits != nil {
-			systemPrompt += fmt.Sprintf("\nTraits: %s", *req.UserSummary.Traits)
+			systemPrompt += fmt.Sprintf("\nTraits (legacy): %s", *req.UserSummary.Traits)
+		}
+
+		if len(req.UserSummary.TraitsJSON) > 0 {
+			traitsJSON, _ := json.Marshal(req.UserSummary.TraitsJSON)
+			systemPrompt += fmt.Sprintf("\nTraits: %s", string(traitsJSON))
 		}
 	}
 

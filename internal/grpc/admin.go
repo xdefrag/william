@@ -322,21 +322,6 @@ func (s *AdminService) isAdmin(ctx context.Context) error {
 	return nil
 }
 
-// hasRoleInChat checks if user has the specified role in the chat
-func (s *AdminService) hasRoleInChat(ctx context.Context, chatID int64, role string) (bool, error) {
-	userID, ok := ctx.Value(TelegramUserIDKey).(int64)
-	if !ok {
-		return false, status.Error(codes.Unauthenticated, "user ID not found in context")
-	}
-
-	userRole, err := s.repo.GetUserRole(ctx, userID, chatID)
-	if err != nil {
-		return false, nil // User has no role in this chat
-	}
-
-	return userRole.Role == role, nil
-}
-
 // checkChatPermission checks if user has permission for chat operations
 // isMutation: true for operations that modify data (admin/moderator), false for read-only (admin/moderator/viewer)
 func (s *AdminService) checkChatPermission(ctx context.Context, chatID int64, isMutation bool) error {

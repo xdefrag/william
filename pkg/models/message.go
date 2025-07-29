@@ -2,6 +2,15 @@ package models
 
 import "time"
 
+// Event represents a planned event with title and optional date
+type Event struct {
+	Title string `json:"title"`
+	Date  string `json:"date,omitempty"` // ISO 8601 format: "2012-07-04T18:10:00.000+09:00"
+}
+
+// UserTrait represents a user trait with key-value structure
+type UserTrait map[string]interface{}
+
 // Message represents a Telegram message stored in DB
 type Message struct {
 	ID            int64     `json:"id" db:"id"`
@@ -17,13 +26,14 @@ type Message struct {
 
 // ChatSummary represents aggregated chat information
 type ChatSummary struct {
-	ID         int64                  `json:"id" db:"id"`
-	ChatID     int64                  `json:"chat_id" db:"chat_id"`
-	Summary    string                 `json:"summary" db:"summary"`
-	TopicsJSON map[string]interface{} `json:"topics_json" db:"topics_json"`
-	NextEvents *string                `json:"next_events" db:"next_events"`
-	CreatedAt  time.Time              `json:"created_at" db:"created_at"`
-	UpdatedAt  time.Time              `json:"updated_at" db:"updated_at"`
+	ID             int64                  `json:"id" db:"id"`
+	ChatID         int64                  `json:"chat_id" db:"chat_id"`
+	Summary        string                 `json:"summary" db:"summary"`
+	TopicsJSON     map[string]interface{} `json:"topics_json" db:"topics_json"`
+	NextEvents     *string                `json:"next_events" db:"next_events"`           // Legacy field for backward compatibility
+	NextEventsJSON []Event                `json:"next_events_json" db:"next_events_json"` // New JSON field
+	CreatedAt      time.Time              `json:"created_at" db:"created_at"`
+	UpdatedAt      time.Time              `json:"updated_at" db:"updated_at"`
 }
 
 // UserSummary represents user behavior analysis
@@ -37,7 +47,8 @@ type UserSummary struct {
 	LikesJSON        map[string]interface{} `json:"likes_json" db:"likes_json"`
 	DislikesJSON     map[string]interface{} `json:"dislikes_json" db:"dislikes_json"`
 	CompetenciesJSON map[string]interface{} `json:"competencies_json" db:"competencies_json"`
-	Traits           *string                `json:"traits" db:"traits"`
+	Traits           *string                `json:"traits" db:"traits"`           // Legacy field for backward compatibility
+	TraitsJSON       UserTrait              `json:"traits_json" db:"traits_json"` // New JSON field
 	CreatedAt        time.Time              `json:"created_at" db:"created_at"`
 	UpdatedAt        time.Time              `json:"updated_at" db:"updated_at"`
 }

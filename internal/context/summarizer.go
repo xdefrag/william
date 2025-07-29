@@ -98,8 +98,8 @@ func (s *Summarizer) SummarizeChat(ctx context.Context, chatID int64, maxMessage
 	}
 
 	// Add next events if present
-	if response.ChatSummary.NextEvents != "" {
-		chatSummary.NextEvents = &response.ChatSummary.NextEvents
+	if len(response.ChatSummary.NextEvents) > 0 {
+		chatSummary.NextEventsJSON = response.ChatSummary.NextEvents
 	}
 
 	err = s.repo.SaveChatSummary(ctx, chatSummary)
@@ -153,8 +153,8 @@ func (s *Summarizer) SummarizeChat(ctx context.Context, chatID int64, maxMessage
 		}
 
 		// Add traits if present
-		if profile.Traits != "" {
-			userSummary.Traits = &profile.Traits
+		if len(profile.Traits) > 0 {
+			userSummary.TraitsJSON = profile.Traits
 		}
 
 		err = s.repo.SaveUserSummary(ctx, userSummary)
