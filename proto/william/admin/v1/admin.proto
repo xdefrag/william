@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+package william.admin.v1;
+
+option go_package = "github.com/xdefrag/william/pkg/adminpb";
+
+import "google/protobuf/timestamp.proto";
+
+// AdminService provides administrative operations for William bot
+service AdminService {
+  // GetChatSummary retrieves the latest summary for a specific chat
+  rpc GetChatSummary(GetChatSummaryRequest) returns (GetChatSummaryResponse);
+  
+  // ListChatSummaries retrieves summaries for multiple chats
+  rpc ListChatSummaries(ListChatSummariesRequest) returns (ListChatSummariesResponse);
+  
+  // GetUserSummary retrieves the latest summary for a specific user in a chat
+  rpc GetUserSummary(GetUserSummaryRequest) returns (GetUserSummaryResponse);
+  
+  // ListUserSummaries retrieves summaries for multiple users in a chat
+  rpc ListUserSummaries(ListUserSummariesRequest) returns (ListUserSummariesResponse);
+}
+
+// ChatSummary represents aggregated chat information
+message ChatSummary {
+  int64 id = 1;
+  int64 chat_id = 2;
+  string summary = 3;
+  map<string, string> topics = 4;
+  optional string next_events = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+// UserSummary represents user behavior analysis
+message UserSummary {
+  int64 id = 1;
+  int64 chat_id = 2;
+  int64 user_id = 3;
+  map<string, string> likes = 4;
+  map<string, string> dislikes = 5;
+  map<string, string> competencies = 6;
+  optional string traits = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+}
+
+// Chat summary requests and responses
+message GetChatSummaryRequest {
+  int64 chat_id = 1;
+}
+
+message GetChatSummaryResponse {
+  optional ChatSummary summary = 1;
+}
+
+message ListChatSummariesRequest {
+  repeated int64 chat_ids = 1;
+  optional int32 page_size = 2;
+  optional string page_token = 3;
+}
+
+message ListChatSummariesResponse {
+  repeated ChatSummary summaries = 1;
+  optional string next_page_token = 2;
+}
+
+// User summary requests and responses
+message GetUserSummaryRequest {
+  int64 chat_id = 1;
+  int64 user_id = 2;
+}
+
+message GetUserSummaryResponse {
+  optional UserSummary summary = 1;
+}
+
+message ListUserSummariesRequest {
+  int64 chat_id = 1;
+  repeated int64 user_ids = 2;
+  optional int32 page_size = 3;
+  optional string page_token = 4;
+}
+
+message ListUserSummariesResponse {
+  repeated UserSummary summaries = 1;
+  optional string next_page_token = 2;
+} 

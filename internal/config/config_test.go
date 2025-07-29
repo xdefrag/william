@@ -7,16 +7,16 @@ import (
 
 func TestLoad(t *testing.T) {
 	// Set environment variables
-	os.Setenv("TG_BOT_TOKEN", "test_token")
-	os.Setenv("OPENAI_API_KEY", "test_api_key")
-	os.Setenv("PG_DSN", "test_dsn")
-	os.Setenv("APP_CONFIG_PATH", "../../config/app.toml")
+	_ = os.Setenv("TG_BOT_TOKEN", "test_token")
+	_ = os.Setenv("OPENAI_API_KEY", "test_api_key")
+	_ = os.Setenv("PG_DSN", "test_dsn")
+	_ = os.Setenv("APP_CONFIG_PATH", "../../config/app.toml")
 
 	defer func() {
-		os.Unsetenv("TG_BOT_TOKEN")
-		os.Unsetenv("OPENAI_API_KEY")
-		os.Unsetenv("PG_DSN")
-		os.Unsetenv("APP_CONFIG_PATH")
+		_ = os.Unsetenv("TG_BOT_TOKEN")
+		_ = os.Unsetenv("OPENAI_API_KEY")
+		_ = os.Unsetenv("PG_DSN")
+		_ = os.Unsetenv("APP_CONFIG_PATH")
 	}()
 
 	cfg, err := Load()
@@ -33,8 +33,8 @@ func TestLoad(t *testing.T) {
 	if cfg.App.OpenAI.Model != "gpt-4o-mini" {
 		t.Errorf("Expected OpenAI model to be 'gpt-4o-mini', got %s", cfg.App.OpenAI.Model)
 	}
-	if cfg.App.Limits.MaxMsgBuffer != 100 {
-		t.Errorf("Expected MaxMsgBuffer to be 100, got %d", cfg.App.Limits.MaxMsgBuffer)
+	if cfg.App.Limits.MaxMsgBuffer != 25 {
+		t.Errorf("Expected MaxMsgBuffer to be 25, got %d", cfg.App.Limits.MaxMsgBuffer)
 	}
 	if cfg.App.Limits.CtxMaxTokens != 2048 {
 		t.Errorf("Expected CtxMaxTokens to be 2048, got %d", cfg.App.Limits.CtxMaxTokens)
@@ -44,11 +44,11 @@ func TestLoad(t *testing.T) {
 	}
 
 	// Test app settings
-	if cfg.App.App.Name != "William" {
-		t.Errorf("Expected app name to be 'William', got %s", cfg.App.App.Name)
+	if cfg.App.App.Name != "Лемур-тян" {
+		t.Errorf("Expected app name to be 'Лемур-тян', got %s", cfg.App.App.Name)
 	}
-	if cfg.App.App.MentionUsername != "@william" {
-		t.Errorf("Expected mention username to be '@william', got %s", cfg.App.App.MentionUsername)
+	if cfg.App.App.MentionUsername != "@lemurchan_bot" {
+		t.Errorf("Expected mention username to be '@lemurchan_bot', got %s", cfg.App.App.MentionUsername)
 	}
 
 	// Test prompts
@@ -67,24 +67,24 @@ func TestLoad(t *testing.T) {
 
 func TestLoadWithEnvOverrides(t *testing.T) {
 	// Set environment variables including overrides
-	os.Setenv("TG_BOT_TOKEN", "test_token")
-	os.Setenv("OPENAI_API_KEY", "test_api_key")
-	os.Setenv("PG_DSN", "test_dsn")
-	os.Setenv("APP_CONFIG_PATH", "../../config/app.toml")
-	os.Setenv("OPENAI_MODEL", "gpt-4")
-	os.Setenv("MAX_MSG_BUFFER", "200")
-	os.Setenv("CTX_MAX_TOKENS", "4096")
-	os.Setenv("TZ", "UTC")
+	_ = os.Setenv("TG_BOT_TOKEN", "test_token")
+	_ = os.Setenv("OPENAI_API_KEY", "test_api_key")
+	_ = os.Setenv("PG_DSN", "test_dsn")
+	_ = os.Setenv("APP_CONFIG_PATH", "../../config/app.toml")
+	_ = os.Setenv("OPENAI_MODEL", "gpt-4")
+	_ = os.Setenv("MAX_MSG_BUFFER", "200")
+	_ = os.Setenv("CTX_MAX_TOKENS", "4096")
+	_ = os.Setenv("TZ", "UTC")
 
 	defer func() {
-		os.Unsetenv("TG_BOT_TOKEN")
-		os.Unsetenv("OPENAI_API_KEY")
-		os.Unsetenv("PG_DSN")
-		os.Unsetenv("APP_CONFIG_PATH")
-		os.Unsetenv("OPENAI_MODEL")
-		os.Unsetenv("MAX_MSG_BUFFER")
-		os.Unsetenv("CTX_MAX_TOKENS")
-		os.Unsetenv("TZ")
+		_ = os.Unsetenv("TG_BOT_TOKEN")
+		_ = os.Unsetenv("OPENAI_API_KEY")
+		_ = os.Unsetenv("PG_DSN")
+		_ = os.Unsetenv("APP_CONFIG_PATH")
+		_ = os.Unsetenv("OPENAI_MODEL")
+		_ = os.Unsetenv("MAX_MSG_BUFFER")
+		_ = os.Unsetenv("CTX_MAX_TOKENS")
+		_ = os.Unsetenv("TZ")
 	}()
 
 	cfg, err := Load()
@@ -109,9 +109,9 @@ func TestLoadWithEnvOverrides(t *testing.T) {
 
 func TestLoadMissingRequiredEnv(t *testing.T) {
 	// Clear any existing environment variables
-	os.Unsetenv("TG_BOT_TOKEN")
-	os.Unsetenv("OPENAI_API_KEY")
-	os.Unsetenv("PG_DSN")
+	_ = os.Unsetenv("TG_BOT_TOKEN")
+	_ = os.Unsetenv("OPENAI_API_KEY")
+	_ = os.Unsetenv("PG_DSN")
 
 	_, err := Load()
 	if err == nil {

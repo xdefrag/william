@@ -23,6 +23,9 @@ summarize_max_messages = 25
 check_interval_minutes = 1
 timezone = "Europe/Belgrade"
 
+[grpc]
+port = 8080
+
 [prompts]
 summarize_system = """You are a community secretary assistant. You will be provided with:
 

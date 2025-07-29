@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/samber/lo"
 	"github.com/xdefrag/william/internal/gpt"
 	"github.com/xdefrag/william/internal/repo"
 	"github.com/xdefrag/william/pkg/models"
@@ -42,7 +41,10 @@ func (s *Summarizer) SummarizeChat(ctx context.Context, chatID int64, maxMessage
 	}
 
 	// Reverse messages to chronological order
-	lo.Reverse(messages)
+	// Reverse to process from oldest to newest
+	for i, j := 0, len(messages)-1; i < j; i, j = i+1, j-1 {
+		messages[i], messages[j] = messages[j], messages[i]
+	}
 
 	// Get existing chat summary
 	existingChatSummary, err := s.repo.GetLatestChatSummary(ctx, chatID)

@@ -23,6 +23,7 @@ import (
 	"github.com/xdefrag/william/internal/config"
 	williamcontext "github.com/xdefrag/william/internal/context"
 	"github.com/xdefrag/william/internal/gpt"
+	grpcserver "github.com/xdefrag/william/internal/grpc"
 	"github.com/xdefrag/william/internal/migrations"
 	"github.com/xdefrag/william/internal/repo"
 	"github.com/xdefrag/william/internal/scheduler"
@@ -68,6 +69,7 @@ func main() {
 	listener := do.MustInvoke[*bot.Listener](injector)
 	handlers := do.MustInvoke[*bot.Handlers](injector)
 	sched := do.MustInvoke[*scheduler.Scheduler](injector)
+	grpcSrv := do.MustInvoke[*grpcserver.Server](injector)
 
 	// Initialize message router for event handling
 	eventRouter, err := message.NewRouter(message.RouterConfig{}, logger)
@@ -108,10 +110,20 @@ func main() {
 		}
 	}()
 
+	// Start gRPC server
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if err := grpcSrv.Start(ctx); err != nil {
+			logger.Error("gRPC server stopped with error", err, nil)
+		}
+	}()
+
 	logger.Info("William bot started successfully", watermill.LogFields{
 		"config_loaded": true,
 		"db_connected":  true,
 		"bot_ready":     true,
+		"grpc_address":  grpcSrv.GetAddress(),
 	})
 
 	// Wait for interrupt signal
@@ -186,14 +198,16 @@ func setupDependencies(injector *do.Injector, cfg *config.Config, logger watermi
 
 		// Run migrations
 		if err := migrations.Run(context.Background(), sqlDB); err != nil {
-			sqlDB.Close()
+			_ = sqlDB.Close()
 			return nil, fmt.Errorf("failed to run migrations: %w", err)
 		}
 
 		logger.Info("Database migrations completed successfully", nil)
 
 		// Close sql connection after migrations
-		sqlDB.Close()
+		if err := sqlDB.Close(); err != nil {
+			logger.Error("Failed to close sql connection after migrations", err, nil)
+		}
 
 		// Create pgxpool connection for application use
 		pool, err := pgxpool.New(context.Background(), config.PostgresDSN)
@@ -314,6 +328,15 @@ func setupDependencies(injector *do.Injector, cfg *config.Config, logger watermi
 		logger := do.MustInvoke[*slog.Logger](i)
 
 		return scheduler.New(publisher, listener, config, logger), nil
+	})
+
+	// Register gRPC server
+	do.Provide(injector, func(i *do.Injector) (*grpcserver.Server, error) {
+		config := do.MustInvoke[*config.Config](i)
+		repository := do.MustInvoke[*repo.Repository](i)
+		logger := do.MustInvoke[*slog.Logger](i)
+
+		return grpcserver.New(config, repository, logger)
 	})
 
 	return nil

@@ -10,4 +10,10 @@ github.com/openai/openai-go
 github.com/stretchr/testify
 github.com/urfave/cli/v2
 github.com/pelletier/go-toml/v2
-github.com/joho/godotenv 
+github.com/joho/godotenv
+google.golang.org/grpc
+google.golang.org/protobuf
+google.golang.org/genproto/googleapis/rpc
+golang.org/x/net
+golang.org/x/sys
+golang.org/x/text 

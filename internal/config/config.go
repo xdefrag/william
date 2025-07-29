@@ -38,6 +38,10 @@ type AppConfig struct {
 		Timezone             string `toml:"timezone"`
 	} `toml:"scheduler"`
 
+	GRPC struct {
+		Port int `toml:"port"`
+	} `toml:"grpc"`
+
 	Prompts struct {
 		SummarizeSystem string `toml:"summarize_system"`
 		ResponseSystem  string `toml:"response_system"`

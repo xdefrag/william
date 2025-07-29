@@ -97,11 +97,6 @@ func (s *Scheduler) runMidnightScheduler(ctx context.Context) {
 	}
 }
 
-// isMidnight checks if the given time is midnight (00:00)
-func (s *Scheduler) isMidnight(t time.Time) bool {
-	return t.Hour() == 0 && t.Minute() == 0
-}
-
 // publishMidnightEvent publishes midnight event
 func (s *Scheduler) publishMidnightEvent(ctx context.Context, event bot.MidnightEvent) error {
 	msgData, err := event.Marshal()
