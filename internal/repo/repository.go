@@ -166,7 +166,7 @@ func (r *Repository) GetLatestChatSummary(ctx context.Context, chatID int64) (*m
 // GetAllUserSummariesByChatID returns all user summaries for a specific chat
 func (r *Repository) GetAllUserSummariesByChatID(ctx context.Context, chatID int64) ([]*models.UserSummary, error) {
 	query := `
-		SELECT id, chat_id, user_id, likes_json, dislikes_json, competencies_json, traits, created_at, updated_at
+		SELECT id, chat_id, user_id, username, first_name, last_name, likes_json, dislikes_json, competencies_json, traits, created_at, updated_at
 		FROM user_summaries 
 		WHERE chat_id = $1 
 		ORDER BY updated_at DESC`
@@ -182,7 +182,7 @@ func (r *Repository) GetAllUserSummariesByChatID(ctx context.Context, chatID int
 		summary := &models.UserSummary{}
 		var likesJSON, dislikesJSON, competenciesJSON []byte
 
-		err := rows.Scan(&summary.ID, &summary.ChatID, &summary.UserID, &likesJSON, &dislikesJSON, &competenciesJSON, &summary.Traits, &summary.CreatedAt, &summary.UpdatedAt)
+		err := rows.Scan(&summary.ID, &summary.ChatID, &summary.UserID, &summary.Username, &summary.FirstName, &summary.LastName, &likesJSON, &dislikesJSON, &competenciesJSON, &summary.Traits, &summary.CreatedAt, &summary.UpdatedAt)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan user summary: %w", err)
 		}
@@ -213,10 +213,13 @@ func (r *Repository) GetAllUserSummariesByChatID(ctx context.Context, chatID int
 
 func (r *Repository) SaveUserSummary(ctx context.Context, summary *models.UserSummary) error {
 	query := `
-		INSERT INTO user_summaries (chat_id, user_id, likes_json, dislikes_json, competencies_json, traits, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		INSERT INTO user_summaries (chat_id, user_id, username, first_name, last_name, likes_json, dislikes_json, competencies_json, traits, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 		ON CONFLICT (chat_id, user_id) 
 		DO UPDATE SET 
+			username = EXCLUDED.username,
+			first_name = EXCLUDED.first_name,
+			last_name = EXCLUDED.last_name,
 			likes_json = EXCLUDED.likes_json,
 			dislikes_json = EXCLUDED.dislikes_json,
 			competencies_json = EXCLUDED.competencies_json,
@@ -245,12 +248,12 @@ func (r *Repository) SaveUserSummary(ctx context.Context, summary *models.UserSu
 		summary.CreatedAt = now
 	}
 
-	return r.pool.QueryRow(ctx, query, summary.ChatID, summary.UserID, likesJSON, dislikesJSON, competenciesJSON, summary.Traits, summary.CreatedAt, summary.UpdatedAt).Scan(&summary.ID)
+	return r.pool.QueryRow(ctx, query, summary.ChatID, summary.UserID, summary.Username, summary.FirstName, summary.LastName, likesJSON, dislikesJSON, competenciesJSON, summary.Traits, summary.CreatedAt, summary.UpdatedAt).Scan(&summary.ID)
 }
 
 func (r *Repository) GetLatestUserSummary(ctx context.Context, chatID, userID int64) (*models.UserSummary, error) {
 	query := `
-		SELECT id, chat_id, user_id, likes_json, dislikes_json, competencies_json, traits, created_at, updated_at
+		SELECT id, chat_id, user_id, username, first_name, last_name, likes_json, dislikes_json, competencies_json, traits, created_at, updated_at
 		FROM user_summaries 
 		WHERE chat_id = $1 AND user_id = $2 
 		ORDER BY updated_at DESC 
@@ -261,7 +264,7 @@ func (r *Repository) GetLatestUserSummary(ctx context.Context, chatID, userID in
 	summary := &models.UserSummary{}
 	var likesJSON, dislikesJSON, competenciesJSON []byte
 
-	err := row.Scan(&summary.ID, &summary.ChatID, &summary.UserID, &likesJSON, &dislikesJSON, &competenciesJSON, &summary.Traits, &summary.CreatedAt, &summary.UpdatedAt)
+	err := row.Scan(&summary.ID, &summary.ChatID, &summary.UserID, &summary.Username, &summary.FirstName, &summary.LastName, &likesJSON, &dislikesJSON, &competenciesJSON, &summary.Traits, &summary.CreatedAt, &summary.UpdatedAt)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, nil

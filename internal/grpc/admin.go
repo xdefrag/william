@@ -257,6 +257,15 @@ func (s *AdminService) userSummaryToProto(summary *models.UserSummary) *adminpb.
 		UpdatedAt:    timestamppb.New(summary.UpdatedAt),
 	}
 
+	if summary.Username != nil {
+		proto.Username = summary.Username
+	}
+	if summary.FirstName != nil {
+		proto.FirstName = summary.FirstName
+	}
+	if summary.LastName != nil {
+		proto.LastName = summary.LastName
+	}
 	if summary.Traits != nil {
 		proto.Traits = summary.Traits
 	}

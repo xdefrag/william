@@ -107,6 +107,14 @@ func (s *Summarizer) SummarizeChat(ctx context.Context, chatID int64, maxMessage
 		return fmt.Errorf("failed to save chat summary: %w", err)
 	}
 
+	// Create user info map from messages for quick lookup
+	userInfoMap := make(map[int64]*models.Message)
+	for _, msg := range messages {
+		if _, exists := userInfoMap[msg.UserID]; !exists {
+			userInfoMap[msg.UserID] = msg
+		}
+	}
+
 	// Save user summaries
 	for userIDStr, profile := range response.UserProfiles {
 		userID, err := strconv.ParseInt(userIDStr, 10, 64)
@@ -120,6 +128,13 @@ func (s *Summarizer) SummarizeChat(ctx context.Context, chatID int64, maxMessage
 			LikesJSON:        make(map[string]interface{}),
 			DislikesJSON:     make(map[string]interface{}),
 			CompetenciesJSON: make(map[string]interface{}),
+		}
+
+		// Set user info from message data
+		if userInfo, exists := userInfoMap[userID]; exists {
+			userSummary.Username = userInfo.Username
+			userSummary.FirstName = &userInfo.UserFirstName
+			userSummary.LastName = userInfo.UserLastName
 		}
 
 		// Convert likes to interface{}

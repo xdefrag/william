@@ -31,6 +31,9 @@ type UserSummary struct {
 	ID               int64                  `json:"id" db:"id"`
 	ChatID           int64                  `json:"chat_id" db:"chat_id"`
 	UserID           int64                  `json:"user_id" db:"user_id"`
+	Username         *string                `json:"username" db:"username"`
+	FirstName        *string                `json:"first_name" db:"first_name"`
+	LastName         *string                `json:"last_name" db:"last_name"`
 	LikesJSON        map[string]interface{} `json:"likes_json" db:"likes_json"`
 	DislikesJSON     map[string]interface{} `json:"dislikes_json" db:"dislikes_json"`
 	CompetenciesJSON map[string]interface{} `json:"competencies_json" db:"competencies_json"`

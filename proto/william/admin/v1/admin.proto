@@ -61,6 +61,9 @@ message UserSummary {
   optional string traits = 7;
   google.protobuf.Timestamp created_at = 8;
   google.protobuf.Timestamp updated_at = 9;
+  optional string username = 10;
+  optional string first_name = 11;
+  optional string last_name = 12;
 }
 
 // UserRole represents user role assignment in a chat

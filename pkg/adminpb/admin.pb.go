@@ -127,6 +127,9 @@ type UserSummary struct {
 	Traits        *string                `protobuf:"bytes,7,opt,name=traits,proto3,oneof" json:"traits,omitempty"`
 	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	Username      *string                `protobuf:"bytes,10,opt,name=username,proto3,oneof" json:"username,omitempty"`
+	FirstName     *string                `protobuf:"bytes,11,opt,name=first_name,json=firstName,proto3,oneof" json:"first_name,omitempty"`
+	LastName      *string                `protobuf:"bytes,12,opt,name=last_name,json=lastName,proto3,oneof" json:"last_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -222,6 +225,27 @@ func (x *UserSummary) GetUpdatedAt() *timestamppb.Timestamp {
 		return x.UpdatedAt
 	}
 	return nil
+}
+
+func (x *UserSummary) GetUsername() string {
+	if x != nil && x.Username != nil {
+		return *x.Username
+	}
+	return ""
+}
+
+func (x *UserSummary) GetFirstName() string {
+	if x != nil && x.FirstName != nil {
+		return *x.FirstName
+	}
+	return ""
+}
+
+func (x *UserSummary) GetLastName() string {
+	if x != nil && x.LastName != nil {
+		return *x.LastName
+	}
+	return ""
 }
 
 // UserRole represents user role assignment in a chat
@@ -1307,7 +1331,7 @@ const file_william_admin_v1_admin_proto_rawDesc = "" +
 	"\vTopicsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\x0e\n" +
-	"\f_next_events\"\x83\x05\n" +
+	"\f_next_events\"\x94\x06\n" +
 	"\vUserSummary\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x17\n" +
 	"\achat_id\x18\x02 \x01(\x03R\x06chatId\x12\x17\n" +
@@ -1319,7 +1343,12 @@ const file_william_admin_v1_admin_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x1a8\n" +
+	"updated_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12\x1f\n" +
+	"\busername\x18\n" +
+	" \x01(\tH\x01R\busername\x88\x01\x01\x12\"\n" +
+	"\n" +
+	"first_name\x18\v \x01(\tH\x02R\tfirstName\x88\x01\x01\x12 \n" +
+	"\tlast_name\x18\f \x01(\tH\x03R\blastName\x88\x01\x01\x1a8\n" +
 	"\n" +
 	"LikesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
@@ -1330,7 +1359,11 @@ const file_william_admin_v1_admin_proto_rawDesc = "" +
 	"\x11CompetenciesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\t\n" +
-	"\a_traits\"\xc7\x02\n" +
+	"\a_traitsB\v\n" +
+	"\t_usernameB\r\n" +
+	"\v_first_nameB\f\n" +
+	"\n" +
+	"_last_name\"\xc7\x02\n" +
 	"\bUserRole\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12(\n" +
 	"\x10telegram_user_id\x18\x02 \x01(\x03R\x0etelegramUserId\x12(\n" +
