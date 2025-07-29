@@ -25,6 +25,7 @@ timezone = "Europe/Belgrade"
 
 [grpc]
 port = 8080
+http_port = 8081
 
 [prompts]
 summarize_system = """You are a community secretary assistant focused on recurring themes and substantial discussions.

@@ -39,7 +39,8 @@ type AppConfig struct {
 	} `toml:"scheduler"`
 
 	GRPC struct {
-		Port int `toml:"port"`
+		Port     int `toml:"port"`
+		HTTPPort int `toml:"http_port"`
 	} `toml:"grpc"`
 
 	Prompts struct {
