@@ -19,10 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AdminService_GetChatSummary_FullMethodName    = "/william.admin.v1.AdminService/GetChatSummary"
-	AdminService_ListChatSummaries_FullMethodName = "/william.admin.v1.AdminService/ListChatSummaries"
-	AdminService_GetUserSummary_FullMethodName    = "/william.admin.v1.AdminService/GetUserSummary"
-	AdminService_ListUserSummaries_FullMethodName = "/william.admin.v1.AdminService/ListUserSummaries"
+	AdminService_GetChatSummary_FullMethodName       = "/william.admin.v1.AdminService/GetChatSummary"
+	AdminService_GetUserSummary_FullMethodName       = "/william.admin.v1.AdminService/GetUserSummary"
+	AdminService_TriggerSummarization_FullMethodName = "/william.admin.v1.AdminService/TriggerSummarization"
 )
 
 // AdminServiceClient is the client API for AdminService service.
@@ -31,14 +30,12 @@ const (
 //
 // AdminService provides administrative operations for William bot
 type AdminServiceClient interface {
-	// GetChatSummary retrieves the latest summary for a specific chat
+	// GetChatSummary retrieves summaries for one or multiple chats
 	GetChatSummary(ctx context.Context, in *GetChatSummaryRequest, opts ...grpc.CallOption) (*GetChatSummaryResponse, error)
-	// ListChatSummaries retrieves summaries for multiple chats
-	ListChatSummaries(ctx context.Context, in *ListChatSummariesRequest, opts ...grpc.CallOption) (*ListChatSummariesResponse, error)
-	// GetUserSummary retrieves the latest summary for a specific user in a chat
+	// GetUserSummary retrieves summaries for one or multiple users in a chat
 	GetUserSummary(ctx context.Context, in *GetUserSummaryRequest, opts ...grpc.CallOption) (*GetUserSummaryResponse, error)
-	// ListUserSummaries retrieves summaries for multiple users in a chat
-	ListUserSummaries(ctx context.Context, in *ListUserSummariesRequest, opts ...grpc.CallOption) (*ListUserSummariesResponse, error)
+	// TriggerSummarization manually triggers summarization for a chat
+	TriggerSummarization(ctx context.Context, in *TriggerSummarizationRequest, opts ...grpc.CallOption) (*TriggerSummarizationResponse, error)
 }
 
 type adminServiceClient struct {
@@ -59,16 +56,6 @@ func (c *adminServiceClient) GetChatSummary(ctx context.Context, in *GetChatSumm
 	return out, nil
 }
 
-func (c *adminServiceClient) ListChatSummaries(ctx context.Context, in *ListChatSummariesRequest, opts ...grpc.CallOption) (*ListChatSummariesResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListChatSummariesResponse)
-	err := c.cc.Invoke(ctx, AdminService_ListChatSummaries_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *adminServiceClient) GetUserSummary(ctx context.Context, in *GetUserSummaryRequest, opts ...grpc.CallOption) (*GetUserSummaryResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetUserSummaryResponse)
@@ -79,10 +66,10 @@ func (c *adminServiceClient) GetUserSummary(ctx context.Context, in *GetUserSumm
 	return out, nil
 }
 
-func (c *adminServiceClient) ListUserSummaries(ctx context.Context, in *ListUserSummariesRequest, opts ...grpc.CallOption) (*ListUserSummariesResponse, error) {
+func (c *adminServiceClient) TriggerSummarization(ctx context.Context, in *TriggerSummarizationRequest, opts ...grpc.CallOption) (*TriggerSummarizationResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListUserSummariesResponse)
-	err := c.cc.Invoke(ctx, AdminService_ListUserSummaries_FullMethodName, in, out, cOpts...)
+	out := new(TriggerSummarizationResponse)
+	err := c.cc.Invoke(ctx, AdminService_TriggerSummarization_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -95,14 +82,12 @@ func (c *adminServiceClient) ListUserSummaries(ctx context.Context, in *ListUser
 //
 // AdminService provides administrative operations for William bot
 type AdminServiceServer interface {
-	// GetChatSummary retrieves the latest summary for a specific chat
+	// GetChatSummary retrieves summaries for one or multiple chats
 	GetChatSummary(context.Context, *GetChatSummaryRequest) (*GetChatSummaryResponse, error)
-	// ListChatSummaries retrieves summaries for multiple chats
-	ListChatSummaries(context.Context, *ListChatSummariesRequest) (*ListChatSummariesResponse, error)
-	// GetUserSummary retrieves the latest summary for a specific user in a chat
+	// GetUserSummary retrieves summaries for one or multiple users in a chat
 	GetUserSummary(context.Context, *GetUserSummaryRequest) (*GetUserSummaryResponse, error)
-	// ListUserSummaries retrieves summaries for multiple users in a chat
-	ListUserSummaries(context.Context, *ListUserSummariesRequest) (*ListUserSummariesResponse, error)
+	// TriggerSummarization manually triggers summarization for a chat
+	TriggerSummarization(context.Context, *TriggerSummarizationRequest) (*TriggerSummarizationResponse, error)
 	mustEmbedUnimplementedAdminServiceServer()
 }
 
@@ -116,14 +101,11 @@ type UnimplementedAdminServiceServer struct{}
 func (UnimplementedAdminServiceServer) GetChatSummary(context.Context, *GetChatSummaryRequest) (*GetChatSummaryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetChatSummary not implemented")
 }
-func (UnimplementedAdminServiceServer) ListChatSummaries(context.Context, *ListChatSummariesRequest) (*ListChatSummariesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListChatSummaries not implemented")
-}
 func (UnimplementedAdminServiceServer) GetUserSummary(context.Context, *GetUserSummaryRequest) (*GetUserSummaryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserSummary not implemented")
 }
-func (UnimplementedAdminServiceServer) ListUserSummaries(context.Context, *ListUserSummariesRequest) (*ListUserSummariesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListUserSummaries not implemented")
+func (UnimplementedAdminServiceServer) TriggerSummarization(context.Context, *TriggerSummarizationRequest) (*TriggerSummarizationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TriggerSummarization not implemented")
 }
 func (UnimplementedAdminServiceServer) mustEmbedUnimplementedAdminServiceServer() {}
 func (UnimplementedAdminServiceServer) testEmbeddedByValue()                      {}
@@ -164,24 +146,6 @@ func _AdminService_GetChatSummary_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AdminService_ListChatSummaries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListChatSummariesRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AdminServiceServer).ListChatSummaries(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AdminService_ListChatSummaries_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdminServiceServer).ListChatSummaries(ctx, req.(*ListChatSummariesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _AdminService_GetUserSummary_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetUserSummaryRequest)
 	if err := dec(in); err != nil {
@@ -200,20 +164,20 @@ func _AdminService_GetUserSummary_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AdminService_ListUserSummaries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListUserSummariesRequest)
+func _AdminService_TriggerSummarization_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TriggerSummarizationRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AdminServiceServer).ListUserSummaries(ctx, in)
+		return srv.(AdminServiceServer).TriggerSummarization(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AdminService_ListUserSummaries_FullMethodName,
+		FullMethod: AdminService_TriggerSummarization_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdminServiceServer).ListUserSummaries(ctx, req.(*ListUserSummariesRequest))
+		return srv.(AdminServiceServer).TriggerSummarization(ctx, req.(*TriggerSummarizationRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -230,16 +194,12 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _AdminService_GetChatSummary_Handler,
 		},
 		{
-			MethodName: "ListChatSummaries",
-			Handler:    _AdminService_ListChatSummaries_Handler,
-		},
-		{
 			MethodName: "GetUserSummary",
 			Handler:    _AdminService_GetUserSummary_Handler,
 		},
 		{
-			MethodName: "ListUserSummaries",
-			Handler:    _AdminService_ListUserSummaries_Handler,
+			MethodName: "TriggerSummarization",
+			Handler:    _AdminService_TriggerSummarization_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

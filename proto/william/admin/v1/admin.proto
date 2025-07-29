@@ -8,17 +8,14 @@ import "google/protobuf/timestamp.proto";
 
 // AdminService provides administrative operations for William bot
 service AdminService {
-  // GetChatSummary retrieves the latest summary for a specific chat
+  // GetChatSummary retrieves summaries for one or multiple chats
   rpc GetChatSummary(GetChatSummaryRequest) returns (GetChatSummaryResponse);
   
-  // ListChatSummaries retrieves summaries for multiple chats
-  rpc ListChatSummaries(ListChatSummariesRequest) returns (ListChatSummariesResponse);
-  
-  // GetUserSummary retrieves the latest summary for a specific user in a chat
+  // GetUserSummary retrieves summaries for one or multiple users in a chat
   rpc GetUserSummary(GetUserSummaryRequest) returns (GetUserSummaryResponse);
   
-  // ListUserSummaries retrieves summaries for multiple users in a chat
-  rpc ListUserSummaries(ListUserSummariesRequest) returns (ListUserSummariesResponse);
+  // TriggerSummarization manually triggers summarization for a chat
+  rpc TriggerSummarization(TriggerSummarizationRequest) returns (TriggerSummarizationResponse);
 }
 
 // ChatSummary represents aggregated chat information
@@ -47,42 +44,30 @@ message UserSummary {
 
 // Chat summary requests and responses
 message GetChatSummaryRequest {
-  int64 chat_id = 1;
+  repeated int64 chat_ids = 1; // Can be one or multiple chat IDs
 }
 
 message GetChatSummaryResponse {
-  optional ChatSummary summary = 1;
-}
-
-message ListChatSummariesRequest {
-  repeated int64 chat_ids = 1;
-  optional int32 page_size = 2;
-  optional string page_token = 3;
-}
-
-message ListChatSummariesResponse {
   repeated ChatSummary summaries = 1;
-  optional string next_page_token = 2;
 }
 
 // User summary requests and responses
 message GetUserSummaryRequest {
   int64 chat_id = 1;
-  int64 user_id = 2;
+  repeated int64 user_ids = 2; // Can be one or multiple user IDs
 }
 
 message GetUserSummaryResponse {
-  optional UserSummary summary = 1;
-}
-
-message ListUserSummariesRequest {
-  int64 chat_id = 1;
-  repeated int64 user_ids = 2;
-  optional int32 page_size = 3;
-  optional string page_token = 4;
-}
-
-message ListUserSummariesResponse {
   repeated UserSummary summaries = 1;
-  optional string next_page_token = 2;
+}
+
+// Manual summarization requests and responses
+message TriggerSummarizationRequest {
+  int64 chat_id = 1;
+}
+
+message TriggerSummarizationResponse {
+  bool success = 1;
+  optional string message = 2;
+  optional string event_id = 3; // Event ID for tracking execution
 } 

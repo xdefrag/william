@@ -227,7 +227,7 @@ func (x *UserSummary) GetUpdatedAt() *timestamppb.Timestamp {
 // Chat summary requests and responses
 type GetChatSummaryRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ChatId        int64                  `protobuf:"varint,1,opt,name=chat_id,json=chatId,proto3" json:"chat_id,omitempty"`
+	ChatIds       []int64                `protobuf:"varint,1,rep,packed,name=chat_ids,json=chatIds,proto3" json:"chat_ids,omitempty"` // Can be one or multiple chat IDs
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -262,16 +262,16 @@ func (*GetChatSummaryRequest) Descriptor() ([]byte, []int) {
 	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *GetChatSummaryRequest) GetChatId() int64 {
+func (x *GetChatSummaryRequest) GetChatIds() []int64 {
 	if x != nil {
-		return x.ChatId
+		return x.ChatIds
 	}
-	return 0
+	return nil
 }
 
 type GetChatSummaryResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Summary       *ChatSummary           `protobuf:"bytes,1,opt,name=summary,proto3,oneof" json:"summary,omitempty"`
+	Summaries     []*ChatSummary         `protobuf:"bytes,1,rep,name=summaries,proto3" json:"summaries,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -306,137 +306,25 @@ func (*GetChatSummaryResponse) Descriptor() ([]byte, []int) {
 	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *GetChatSummaryResponse) GetSummary() *ChatSummary {
-	if x != nil {
-		return x.Summary
-	}
-	return nil
-}
-
-type ListChatSummariesRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ChatIds       []int64                `protobuf:"varint,1,rep,packed,name=chat_ids,json=chatIds,proto3" json:"chat_ids,omitempty"`
-	PageSize      *int32                 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3,oneof" json:"page_size,omitempty"`
-	PageToken     *string                `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3,oneof" json:"page_token,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ListChatSummariesRequest) Reset() {
-	*x = ListChatSummariesRequest{}
-	mi := &file_william_admin_v1_admin_proto_msgTypes[4]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ListChatSummariesRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ListChatSummariesRequest) ProtoMessage() {}
-
-func (x *ListChatSummariesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_william_admin_v1_admin_proto_msgTypes[4]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ListChatSummariesRequest.ProtoReflect.Descriptor instead.
-func (*ListChatSummariesRequest) Descriptor() ([]byte, []int) {
-	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{4}
-}
-
-func (x *ListChatSummariesRequest) GetChatIds() []int64 {
-	if x != nil {
-		return x.ChatIds
-	}
-	return nil
-}
-
-func (x *ListChatSummariesRequest) GetPageSize() int32 {
-	if x != nil && x.PageSize != nil {
-		return *x.PageSize
-	}
-	return 0
-}
-
-func (x *ListChatSummariesRequest) GetPageToken() string {
-	if x != nil && x.PageToken != nil {
-		return *x.PageToken
-	}
-	return ""
-}
-
-type ListChatSummariesResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Summaries     []*ChatSummary         `protobuf:"bytes,1,rep,name=summaries,proto3" json:"summaries,omitempty"`
-	NextPageToken *string                `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3,oneof" json:"next_page_token,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ListChatSummariesResponse) Reset() {
-	*x = ListChatSummariesResponse{}
-	mi := &file_william_admin_v1_admin_proto_msgTypes[5]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ListChatSummariesResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ListChatSummariesResponse) ProtoMessage() {}
-
-func (x *ListChatSummariesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_william_admin_v1_admin_proto_msgTypes[5]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ListChatSummariesResponse.ProtoReflect.Descriptor instead.
-func (*ListChatSummariesResponse) Descriptor() ([]byte, []int) {
-	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *ListChatSummariesResponse) GetSummaries() []*ChatSummary {
+func (x *GetChatSummaryResponse) GetSummaries() []*ChatSummary {
 	if x != nil {
 		return x.Summaries
 	}
 	return nil
 }
 
-func (x *ListChatSummariesResponse) GetNextPageToken() string {
-	if x != nil && x.NextPageToken != nil {
-		return *x.NextPageToken
-	}
-	return ""
-}
-
 // User summary requests and responses
 type GetUserSummaryRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ChatId        int64                  `protobuf:"varint,1,opt,name=chat_id,json=chatId,proto3" json:"chat_id,omitempty"`
-	UserId        int64                  `protobuf:"varint,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	UserIds       []int64                `protobuf:"varint,2,rep,packed,name=user_ids,json=userIds,proto3" json:"user_ids,omitempty"` // Can be one or multiple user IDs
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetUserSummaryRequest) Reset() {
 	*x = GetUserSummaryRequest{}
-	mi := &file_william_admin_v1_admin_proto_msgTypes[6]
+	mi := &file_william_admin_v1_admin_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -448,7 +336,7 @@ func (x *GetUserSummaryRequest) String() string {
 func (*GetUserSummaryRequest) ProtoMessage() {}
 
 func (x *GetUserSummaryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_william_admin_v1_admin_proto_msgTypes[6]
+	mi := &file_william_admin_v1_admin_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -461,7 +349,7 @@ func (x *GetUserSummaryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetUserSummaryRequest.ProtoReflect.Descriptor instead.
 func (*GetUserSummaryRequest) Descriptor() ([]byte, []int) {
-	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{6}
+	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *GetUserSummaryRequest) GetChatId() int64 {
@@ -471,23 +359,23 @@ func (x *GetUserSummaryRequest) GetChatId() int64 {
 	return 0
 }
 
-func (x *GetUserSummaryRequest) GetUserId() int64 {
+func (x *GetUserSummaryRequest) GetUserIds() []int64 {
 	if x != nil {
-		return x.UserId
+		return x.UserIds
 	}
-	return 0
+	return nil
 }
 
 type GetUserSummaryResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Summary       *UserSummary           `protobuf:"bytes,1,opt,name=summary,proto3,oneof" json:"summary,omitempty"`
+	Summaries     []*UserSummary         `protobuf:"bytes,1,rep,name=summaries,proto3" json:"summaries,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetUserSummaryResponse) Reset() {
 	*x = GetUserSummaryResponse{}
-	mi := &file_william_admin_v1_admin_proto_msgTypes[7]
+	mi := &file_william_admin_v1_admin_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -499,7 +387,7 @@ func (x *GetUserSummaryResponse) String() string {
 func (*GetUserSummaryResponse) ProtoMessage() {}
 
 func (x *GetUserSummaryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_william_admin_v1_admin_proto_msgTypes[7]
+	mi := &file_william_admin_v1_admin_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -512,132 +400,117 @@ func (x *GetUserSummaryResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetUserSummaryResponse.ProtoReflect.Descriptor instead.
 func (*GetUserSummaryResponse) Descriptor() ([]byte, []int) {
-	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{7}
+	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *GetUserSummaryResponse) GetSummary() *UserSummary {
-	if x != nil {
-		return x.Summary
-	}
-	return nil
-}
-
-type ListUserSummariesRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ChatId        int64                  `protobuf:"varint,1,opt,name=chat_id,json=chatId,proto3" json:"chat_id,omitempty"`
-	UserIds       []int64                `protobuf:"varint,2,rep,packed,name=user_ids,json=userIds,proto3" json:"user_ids,omitempty"`
-	PageSize      *int32                 `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3,oneof" json:"page_size,omitempty"`
-	PageToken     *string                `protobuf:"bytes,4,opt,name=page_token,json=pageToken,proto3,oneof" json:"page_token,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ListUserSummariesRequest) Reset() {
-	*x = ListUserSummariesRequest{}
-	mi := &file_william_admin_v1_admin_proto_msgTypes[8]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ListUserSummariesRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ListUserSummariesRequest) ProtoMessage() {}
-
-func (x *ListUserSummariesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_william_admin_v1_admin_proto_msgTypes[8]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ListUserSummariesRequest.ProtoReflect.Descriptor instead.
-func (*ListUserSummariesRequest) Descriptor() ([]byte, []int) {
-	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{8}
-}
-
-func (x *ListUserSummariesRequest) GetChatId() int64 {
-	if x != nil {
-		return x.ChatId
-	}
-	return 0
-}
-
-func (x *ListUserSummariesRequest) GetUserIds() []int64 {
-	if x != nil {
-		return x.UserIds
-	}
-	return nil
-}
-
-func (x *ListUserSummariesRequest) GetPageSize() int32 {
-	if x != nil && x.PageSize != nil {
-		return *x.PageSize
-	}
-	return 0
-}
-
-func (x *ListUserSummariesRequest) GetPageToken() string {
-	if x != nil && x.PageToken != nil {
-		return *x.PageToken
-	}
-	return ""
-}
-
-type ListUserSummariesResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Summaries     []*UserSummary         `protobuf:"bytes,1,rep,name=summaries,proto3" json:"summaries,omitempty"`
-	NextPageToken *string                `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3,oneof" json:"next_page_token,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ListUserSummariesResponse) Reset() {
-	*x = ListUserSummariesResponse{}
-	mi := &file_william_admin_v1_admin_proto_msgTypes[9]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ListUserSummariesResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ListUserSummariesResponse) ProtoMessage() {}
-
-func (x *ListUserSummariesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_william_admin_v1_admin_proto_msgTypes[9]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ListUserSummariesResponse.ProtoReflect.Descriptor instead.
-func (*ListUserSummariesResponse) Descriptor() ([]byte, []int) {
-	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{9}
-}
-
-func (x *ListUserSummariesResponse) GetSummaries() []*UserSummary {
+func (x *GetUserSummaryResponse) GetSummaries() []*UserSummary {
 	if x != nil {
 		return x.Summaries
 	}
 	return nil
 }
 
-func (x *ListUserSummariesResponse) GetNextPageToken() string {
-	if x != nil && x.NextPageToken != nil {
-		return *x.NextPageToken
+// Manual summarization requests and responses
+type TriggerSummarizationRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ChatId        int64                  `protobuf:"varint,1,opt,name=chat_id,json=chatId,proto3" json:"chat_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TriggerSummarizationRequest) Reset() {
+	*x = TriggerSummarizationRequest{}
+	mi := &file_william_admin_v1_admin_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TriggerSummarizationRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TriggerSummarizationRequest) ProtoMessage() {}
+
+func (x *TriggerSummarizationRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_william_admin_v1_admin_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TriggerSummarizationRequest.ProtoReflect.Descriptor instead.
+func (*TriggerSummarizationRequest) Descriptor() ([]byte, []int) {
+	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *TriggerSummarizationRequest) GetChatId() int64 {
+	if x != nil {
+		return x.ChatId
+	}
+	return 0
+}
+
+type TriggerSummarizationResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       *string                `protobuf:"bytes,2,opt,name=message,proto3,oneof" json:"message,omitempty"`
+	EventId       *string                `protobuf:"bytes,3,opt,name=event_id,json=eventId,proto3,oneof" json:"event_id,omitempty"` // Event ID for tracking execution
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TriggerSummarizationResponse) Reset() {
+	*x = TriggerSummarizationResponse{}
+	mi := &file_william_admin_v1_admin_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TriggerSummarizationResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TriggerSummarizationResponse) ProtoMessage() {}
+
+func (x *TriggerSummarizationResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_william_admin_v1_admin_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TriggerSummarizationResponse.ProtoReflect.Descriptor instead.
+func (*TriggerSummarizationResponse) Descriptor() ([]byte, []int) {
+	return file_william_admin_v1_admin_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *TriggerSummarizationResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *TriggerSummarizationResponse) GetMessage() string {
+	if x != nil && x.Message != nil {
+		return *x.Message
+	}
+	return ""
+}
+
+func (x *TriggerSummarizationResponse) GetEventId() string {
+	if x != nil && x.EventId != nil {
+		return *x.EventId
 	}
 	return ""
 }
@@ -684,50 +557,29 @@ const file_william_admin_v1_admin_proto_rawDesc = "" +
 	"\x11CompetenciesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\t\n" +
-	"\a_traits\"0\n" +
-	"\x15GetChatSummaryRequest\x12\x17\n" +
-	"\achat_id\x18\x01 \x01(\x03R\x06chatId\"b\n" +
-	"\x16GetChatSummaryResponse\x12<\n" +
-	"\asummary\x18\x01 \x01(\v2\x1d.william.admin.v1.ChatSummaryH\x00R\asummary\x88\x01\x01B\n" +
-	"\n" +
-	"\b_summary\"\x98\x01\n" +
-	"\x18ListChatSummariesRequest\x12\x19\n" +
-	"\bchat_ids\x18\x01 \x03(\x03R\achatIds\x12 \n" +
-	"\tpage_size\x18\x02 \x01(\x05H\x00R\bpageSize\x88\x01\x01\x12\"\n" +
-	"\n" +
-	"page_token\x18\x03 \x01(\tH\x01R\tpageToken\x88\x01\x01B\f\n" +
-	"\n" +
-	"_page_sizeB\r\n" +
-	"\v_page_token\"\x99\x01\n" +
-	"\x19ListChatSummariesResponse\x12;\n" +
-	"\tsummaries\x18\x01 \x03(\v2\x1d.william.admin.v1.ChatSummaryR\tsummaries\x12+\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tH\x00R\rnextPageToken\x88\x01\x01B\x12\n" +
-	"\x10_next_page_token\"I\n" +
+	"\a_traits\"2\n" +
+	"\x15GetChatSummaryRequest\x12\x19\n" +
+	"\bchat_ids\x18\x01 \x03(\x03R\achatIds\"U\n" +
+	"\x16GetChatSummaryResponse\x12;\n" +
+	"\tsummaries\x18\x01 \x03(\v2\x1d.william.admin.v1.ChatSummaryR\tsummaries\"K\n" +
 	"\x15GetUserSummaryRequest\x12\x17\n" +
-	"\achat_id\x18\x01 \x01(\x03R\x06chatId\x12\x17\n" +
-	"\auser_id\x18\x02 \x01(\x03R\x06userId\"b\n" +
-	"\x16GetUserSummaryResponse\x12<\n" +
-	"\asummary\x18\x01 \x01(\v2\x1d.william.admin.v1.UserSummaryH\x00R\asummary\x88\x01\x01B\n" +
-	"\n" +
-	"\b_summary\"\xb1\x01\n" +
-	"\x18ListUserSummariesRequest\x12\x17\n" +
 	"\achat_id\x18\x01 \x01(\x03R\x06chatId\x12\x19\n" +
-	"\buser_ids\x18\x02 \x03(\x03R\auserIds\x12 \n" +
-	"\tpage_size\x18\x03 \x01(\x05H\x00R\bpageSize\x88\x01\x01\x12\"\n" +
+	"\buser_ids\x18\x02 \x03(\x03R\auserIds\"U\n" +
+	"\x16GetUserSummaryResponse\x12;\n" +
+	"\tsummaries\x18\x01 \x03(\v2\x1d.william.admin.v1.UserSummaryR\tsummaries\"6\n" +
+	"\x1bTriggerSummarizationRequest\x12\x17\n" +
+	"\achat_id\x18\x01 \x01(\x03R\x06chatId\"\x90\x01\n" +
+	"\x1cTriggerSummarizationResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x1d\n" +
+	"\amessage\x18\x02 \x01(\tH\x00R\amessage\x88\x01\x01\x12\x1e\n" +
+	"\bevent_id\x18\x03 \x01(\tH\x01R\aeventId\x88\x01\x01B\n" +
 	"\n" +
-	"page_token\x18\x04 \x01(\tH\x01R\tpageToken\x88\x01\x01B\f\n" +
-	"\n" +
-	"_page_sizeB\r\n" +
-	"\v_page_token\"\x99\x01\n" +
-	"\x19ListUserSummariesResponse\x12;\n" +
-	"\tsummaries\x18\x01 \x03(\v2\x1d.william.admin.v1.UserSummaryR\tsummaries\x12+\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tH\x00R\rnextPageToken\x88\x01\x01B\x12\n" +
-	"\x10_next_page_token2\xb4\x03\n" +
+	"\b_messageB\v\n" +
+	"\t_event_id2\xcf\x02\n" +
 	"\fAdminService\x12c\n" +
-	"\x0eGetChatSummary\x12'.william.admin.v1.GetChatSummaryRequest\x1a(.william.admin.v1.GetChatSummaryResponse\x12l\n" +
-	"\x11ListChatSummaries\x12*.william.admin.v1.ListChatSummariesRequest\x1a+.william.admin.v1.ListChatSummariesResponse\x12c\n" +
-	"\x0eGetUserSummary\x12'.william.admin.v1.GetUserSummaryRequest\x1a(.william.admin.v1.GetUserSummaryResponse\x12l\n" +
-	"\x11ListUserSummaries\x12*.william.admin.v1.ListUserSummariesRequest\x1a+.william.admin.v1.ListUserSummariesResponseB(Z&github.com/xdefrag/william/pkg/adminpbb\x06proto3"
+	"\x0eGetChatSummary\x12'.william.admin.v1.GetChatSummaryRequest\x1a(.william.admin.v1.GetChatSummaryResponse\x12c\n" +
+	"\x0eGetUserSummary\x12'.william.admin.v1.GetUserSummaryRequest\x1a(.william.admin.v1.GetUserSummaryResponse\x12u\n" +
+	"\x14TriggerSummarization\x12-.william.admin.v1.TriggerSummarizationRequest\x1a..william.admin.v1.TriggerSummarizationResponseB(Z&github.com/xdefrag/william/pkg/adminpbb\x06proto3"
 
 var (
 	file_william_admin_v1_admin_proto_rawDescOnce sync.Once
@@ -741,50 +593,44 @@ func file_william_admin_v1_admin_proto_rawDescGZIP() []byte {
 	return file_william_admin_v1_admin_proto_rawDescData
 }
 
-var file_william_admin_v1_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_william_admin_v1_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_william_admin_v1_admin_proto_goTypes = []any{
-	(*ChatSummary)(nil),               // 0: william.admin.v1.ChatSummary
-	(*UserSummary)(nil),               // 1: william.admin.v1.UserSummary
-	(*GetChatSummaryRequest)(nil),     // 2: william.admin.v1.GetChatSummaryRequest
-	(*GetChatSummaryResponse)(nil),    // 3: william.admin.v1.GetChatSummaryResponse
-	(*ListChatSummariesRequest)(nil),  // 4: william.admin.v1.ListChatSummariesRequest
-	(*ListChatSummariesResponse)(nil), // 5: william.admin.v1.ListChatSummariesResponse
-	(*GetUserSummaryRequest)(nil),     // 6: william.admin.v1.GetUserSummaryRequest
-	(*GetUserSummaryResponse)(nil),    // 7: william.admin.v1.GetUserSummaryResponse
-	(*ListUserSummariesRequest)(nil),  // 8: william.admin.v1.ListUserSummariesRequest
-	(*ListUserSummariesResponse)(nil), // 9: william.admin.v1.ListUserSummariesResponse
-	nil,                               // 10: william.admin.v1.ChatSummary.TopicsEntry
-	nil,                               // 11: william.admin.v1.UserSummary.LikesEntry
-	nil,                               // 12: william.admin.v1.UserSummary.DislikesEntry
-	nil,                               // 13: william.admin.v1.UserSummary.CompetenciesEntry
-	(*timestamppb.Timestamp)(nil),     // 14: google.protobuf.Timestamp
+	(*ChatSummary)(nil),                  // 0: william.admin.v1.ChatSummary
+	(*UserSummary)(nil),                  // 1: william.admin.v1.UserSummary
+	(*GetChatSummaryRequest)(nil),        // 2: william.admin.v1.GetChatSummaryRequest
+	(*GetChatSummaryResponse)(nil),       // 3: william.admin.v1.GetChatSummaryResponse
+	(*GetUserSummaryRequest)(nil),        // 4: william.admin.v1.GetUserSummaryRequest
+	(*GetUserSummaryResponse)(nil),       // 5: william.admin.v1.GetUserSummaryResponse
+	(*TriggerSummarizationRequest)(nil),  // 6: william.admin.v1.TriggerSummarizationRequest
+	(*TriggerSummarizationResponse)(nil), // 7: william.admin.v1.TriggerSummarizationResponse
+	nil,                                  // 8: william.admin.v1.ChatSummary.TopicsEntry
+	nil,                                  // 9: william.admin.v1.UserSummary.LikesEntry
+	nil,                                  // 10: william.admin.v1.UserSummary.DislikesEntry
+	nil,                                  // 11: william.admin.v1.UserSummary.CompetenciesEntry
+	(*timestamppb.Timestamp)(nil),        // 12: google.protobuf.Timestamp
 }
 var file_william_admin_v1_admin_proto_depIdxs = []int32{
-	10, // 0: william.admin.v1.ChatSummary.topics:type_name -> william.admin.v1.ChatSummary.TopicsEntry
-	14, // 1: william.admin.v1.ChatSummary.created_at:type_name -> google.protobuf.Timestamp
-	14, // 2: william.admin.v1.ChatSummary.updated_at:type_name -> google.protobuf.Timestamp
-	11, // 3: william.admin.v1.UserSummary.likes:type_name -> william.admin.v1.UserSummary.LikesEntry
-	12, // 4: william.admin.v1.UserSummary.dislikes:type_name -> william.admin.v1.UserSummary.DislikesEntry
-	13, // 5: william.admin.v1.UserSummary.competencies:type_name -> william.admin.v1.UserSummary.CompetenciesEntry
-	14, // 6: william.admin.v1.UserSummary.created_at:type_name -> google.protobuf.Timestamp
-	14, // 7: william.admin.v1.UserSummary.updated_at:type_name -> google.protobuf.Timestamp
-	0,  // 8: william.admin.v1.GetChatSummaryResponse.summary:type_name -> william.admin.v1.ChatSummary
-	0,  // 9: william.admin.v1.ListChatSummariesResponse.summaries:type_name -> william.admin.v1.ChatSummary
-	1,  // 10: william.admin.v1.GetUserSummaryResponse.summary:type_name -> william.admin.v1.UserSummary
-	1,  // 11: william.admin.v1.ListUserSummariesResponse.summaries:type_name -> william.admin.v1.UserSummary
-	2,  // 12: william.admin.v1.AdminService.GetChatSummary:input_type -> william.admin.v1.GetChatSummaryRequest
-	4,  // 13: william.admin.v1.AdminService.ListChatSummaries:input_type -> william.admin.v1.ListChatSummariesRequest
-	6,  // 14: william.admin.v1.AdminService.GetUserSummary:input_type -> william.admin.v1.GetUserSummaryRequest
-	8,  // 15: william.admin.v1.AdminService.ListUserSummaries:input_type -> william.admin.v1.ListUserSummariesRequest
-	3,  // 16: william.admin.v1.AdminService.GetChatSummary:output_type -> william.admin.v1.GetChatSummaryResponse
-	5,  // 17: william.admin.v1.AdminService.ListChatSummaries:output_type -> william.admin.v1.ListChatSummariesResponse
-	7,  // 18: william.admin.v1.AdminService.GetUserSummary:output_type -> william.admin.v1.GetUserSummaryResponse
-	9,  // 19: william.admin.v1.AdminService.ListUserSummaries:output_type -> william.admin.v1.ListUserSummariesResponse
-	16, // [16:20] is the sub-list for method output_type
-	12, // [12:16] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	8,  // 0: william.admin.v1.ChatSummary.topics:type_name -> william.admin.v1.ChatSummary.TopicsEntry
+	12, // 1: william.admin.v1.ChatSummary.created_at:type_name -> google.protobuf.Timestamp
+	12, // 2: william.admin.v1.ChatSummary.updated_at:type_name -> google.protobuf.Timestamp
+	9,  // 3: william.admin.v1.UserSummary.likes:type_name -> william.admin.v1.UserSummary.LikesEntry
+	10, // 4: william.admin.v1.UserSummary.dislikes:type_name -> william.admin.v1.UserSummary.DislikesEntry
+	11, // 5: william.admin.v1.UserSummary.competencies:type_name -> william.admin.v1.UserSummary.CompetenciesEntry
+	12, // 6: william.admin.v1.UserSummary.created_at:type_name -> google.protobuf.Timestamp
+	12, // 7: william.admin.v1.UserSummary.updated_at:type_name -> google.protobuf.Timestamp
+	0,  // 8: william.admin.v1.GetChatSummaryResponse.summaries:type_name -> william.admin.v1.ChatSummary
+	1,  // 9: william.admin.v1.GetUserSummaryResponse.summaries:type_name -> william.admin.v1.UserSummary
+	2,  // 10: william.admin.v1.AdminService.GetChatSummary:input_type -> william.admin.v1.GetChatSummaryRequest
+	4,  // 11: william.admin.v1.AdminService.GetUserSummary:input_type -> william.admin.v1.GetUserSummaryRequest
+	6,  // 12: william.admin.v1.AdminService.TriggerSummarization:input_type -> william.admin.v1.TriggerSummarizationRequest
+	3,  // 13: william.admin.v1.AdminService.GetChatSummary:output_type -> william.admin.v1.GetChatSummaryResponse
+	5,  // 14: william.admin.v1.AdminService.GetUserSummary:output_type -> william.admin.v1.GetUserSummaryResponse
+	7,  // 15: william.admin.v1.AdminService.TriggerSummarization:output_type -> william.admin.v1.TriggerSummarizationResponse
+	13, // [13:16] is the sub-list for method output_type
+	10, // [10:13] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_william_admin_v1_admin_proto_init() }
@@ -794,19 +640,14 @@ func file_william_admin_v1_admin_proto_init() {
 	}
 	file_william_admin_v1_admin_proto_msgTypes[0].OneofWrappers = []any{}
 	file_william_admin_v1_admin_proto_msgTypes[1].OneofWrappers = []any{}
-	file_william_admin_v1_admin_proto_msgTypes[3].OneofWrappers = []any{}
-	file_william_admin_v1_admin_proto_msgTypes[4].OneofWrappers = []any{}
-	file_william_admin_v1_admin_proto_msgTypes[5].OneofWrappers = []any{}
 	file_william_admin_v1_admin_proto_msgTypes[7].OneofWrappers = []any{}
-	file_william_admin_v1_admin_proto_msgTypes[8].OneofWrappers = []any{}
-	file_william_admin_v1_admin_proto_msgTypes[9].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_william_admin_v1_admin_proto_rawDesc), len(file_william_admin_v1_admin_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   14,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

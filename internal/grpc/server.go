@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 
+	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/xdefrag/william/internal/config"
 	"github.com/xdefrag/william/internal/repo"
 	"github.com/xdefrag/william/pkg/adminpb"
@@ -27,7 +28,7 @@ type Server struct {
 }
 
 // New creates a new gRPC server instance
-func New(cfg *config.Config, repository *repo.Repository, logger *slog.Logger) (*Server, error) {
+func New(cfg *config.Config, repository *repo.Repository, publisher message.Publisher, logger *slog.Logger) (*Server, error) {
 	// Create listener
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.App.GRPC.Port))
 	if err != nil {
@@ -48,7 +49,7 @@ func New(cfg *config.Config, repository *repo.Repository, logger *slog.Logger) (
 	healthServer.SetServingStatus("", grpc_health_v1.HealthCheckResponse_SERVING)
 
 	// Register admin service
-	adminService := NewAdminService(repository, logger)
+	adminService := NewAdminService(repository, publisher, logger)
 	adminpb.RegisterAdminServiceServer(server, adminService)
 
 	// Enable server reflection for development

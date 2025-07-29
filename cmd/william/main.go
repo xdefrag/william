@@ -334,9 +334,10 @@ func setupDependencies(injector *do.Injector, cfg *config.Config, logger watermi
 	do.Provide(injector, func(i *do.Injector) (*grpcserver.Server, error) {
 		config := do.MustInvoke[*config.Config](i)
 		repository := do.MustInvoke[*repo.Repository](i)
+		publisher := do.MustInvoke[message.Publisher](i)
 		logger := do.MustInvoke[*slog.Logger](i)
 
-		return grpcserver.New(config, repository, logger)
+		return grpcserver.New(config, repository, publisher, logger)
 	})
 
 	return nil

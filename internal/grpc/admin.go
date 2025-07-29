@@ -2,13 +2,18 @@ package grpc
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"log/slog"
+	"time"
 
+	"github.com/ThreeDotsLabs/watermill/message"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/xdefrag/william/internal/bot"
 	"github.com/xdefrag/william/internal/repo"
 	"github.com/xdefrag/william/pkg/adminpb"
 	"github.com/xdefrag/william/pkg/models"
@@ -17,48 +22,26 @@ import (
 // AdminService implements the AdminServiceServer interface
 type AdminService struct {
 	adminpb.UnimplementedAdminServiceServer
-	repo   *repo.Repository
-	logger *slog.Logger
+	repo      *repo.Repository
+	publisher message.Publisher
+	logger    *slog.Logger
 }
 
 // NewAdminService creates a new AdminService instance
-func NewAdminService(repository *repo.Repository, logger *slog.Logger) *AdminService {
+func NewAdminService(repository *repo.Repository, publisher message.Publisher, logger *slog.Logger) *AdminService {
 	return &AdminService{
-		repo:   repository,
-		logger: logger,
+		repo:      repository,
+		publisher: publisher,
+		logger:    logger,
 	}
 }
 
-// GetChatSummary retrieves the latest summary for a specific chat
+// GetChatSummary retrieves summaries for one or multiple chats
 func (s *AdminService) GetChatSummary(ctx context.Context, req *adminpb.GetChatSummaryRequest) (*adminpb.GetChatSummaryResponse, error) {
-	if req.ChatId == 0 {
-		return nil, status.Error(codes.InvalidArgument, "chat_id is required")
-	}
-
-	summary, err := s.repo.GetLatestChatSummary(ctx, req.ChatId)
-	if err != nil {
-		s.logger.Error("Failed to get chat summary",
-			slog.Int64("chat_id", req.ChatId),
-			slog.String("error", err.Error()),
-		)
-		return nil, status.Error(codes.Internal, "Failed to retrieve chat summary")
-	}
-
-	if summary == nil {
-		return &adminpb.GetChatSummaryResponse{Summary: nil}, nil
-	}
-
-	protoSummary := s.chatSummaryToProto(summary)
-	return &adminpb.GetChatSummaryResponse{Summary: protoSummary}, nil
-}
-
-// ListChatSummaries retrieves summaries for multiple chats
-func (s *AdminService) ListChatSummaries(ctx context.Context, req *adminpb.ListChatSummariesRequest) (*adminpb.ListChatSummariesResponse, error) {
 	if len(req.ChatIds) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "at least one chat_id is required")
 	}
 
-	// Get summaries for all requested chat IDs
 	var summaries []*adminpb.ChatSummary
 	for _, chatID := range req.ChatIds {
 		summary, err := s.repo.GetLatestChatSummary(ctx, chatID)
@@ -75,38 +58,11 @@ func (s *AdminService) ListChatSummaries(ctx context.Context, req *adminpb.ListC
 		}
 	}
 
-	return &adminpb.ListChatSummariesResponse{Summaries: summaries}, nil
+	return &adminpb.GetChatSummaryResponse{Summaries: summaries}, nil
 }
 
-// GetUserSummary retrieves the latest summary for a specific user in a chat
+// GetUserSummary retrieves summaries for one or multiple users in a chat
 func (s *AdminService) GetUserSummary(ctx context.Context, req *adminpb.GetUserSummaryRequest) (*adminpb.GetUserSummaryResponse, error) {
-	if req.ChatId == 0 {
-		return nil, status.Error(codes.InvalidArgument, "chat_id is required")
-	}
-	if req.UserId == 0 {
-		return nil, status.Error(codes.InvalidArgument, "user_id is required")
-	}
-
-	summary, err := s.repo.GetLatestUserSummary(ctx, req.ChatId, req.UserId)
-	if err != nil {
-		s.logger.Error("Failed to get user summary",
-			slog.Int64("chat_id", req.ChatId),
-			slog.Int64("user_id", req.UserId),
-			slog.String("error", err.Error()),
-		)
-		return nil, status.Error(codes.Internal, "Failed to retrieve user summary")
-	}
-
-	if summary == nil {
-		return &adminpb.GetUserSummaryResponse{Summary: nil}, nil
-	}
-
-	protoSummary := s.userSummaryToProto(summary)
-	return &adminpb.GetUserSummaryResponse{Summary: protoSummary}, nil
-}
-
-// ListUserSummaries retrieves summaries for multiple users in a chat
-func (s *AdminService) ListUserSummaries(ctx context.Context, req *adminpb.ListUserSummariesRequest) (*adminpb.ListUserSummariesResponse, error) {
 	if req.ChatId == 0 {
 		return nil, status.Error(codes.InvalidArgument, "chat_id is required")
 	}
@@ -131,7 +87,78 @@ func (s *AdminService) ListUserSummaries(ctx context.Context, req *adminpb.ListU
 		}
 	}
 
-	return &adminpb.ListUserSummariesResponse{Summaries: summaries}, nil
+	return &adminpb.GetUserSummaryResponse{Summaries: summaries}, nil
+}
+
+// TriggerSummarization manually triggers summarization for a chat
+func (s *AdminService) TriggerSummarization(ctx context.Context, req *adminpb.TriggerSummarizationRequest) (*adminpb.TriggerSummarizationResponse, error) {
+	if req.ChatId == 0 {
+		return nil, status.Error(codes.InvalidArgument, "chat_id is required")
+	}
+
+	// Generate unique event ID for tracking
+	eventID := make([]byte, 16) // 128 bits
+	if _, err := rand.Read(eventID); err != nil {
+		s.logger.Error("Failed to generate event ID",
+			slog.Int64("chat_id", req.ChatId),
+			slog.String("error", err.Error()),
+		)
+		return &adminpb.TriggerSummarizationResponse{
+			Success: false,
+			Message: func() *string { msg := "Failed to generate event ID"; return &msg }(),
+			EventId: func() *string { id := hex.EncodeToString(eventID); return &id }(),
+		}, nil
+	}
+
+	s.logger.Info("Manual summarization triggered",
+		slog.Int64("chat_id", req.ChatId),
+		slog.String("event_id", hex.EncodeToString(eventID)),
+	)
+
+	// Create and publish summarize event
+	event := bot.SummarizeEvent{
+		ChatID:    req.ChatId,
+		Timestamp: time.Now(),
+	}
+
+	eventData, err := event.Marshal()
+	if err != nil {
+		s.logger.Error("Failed to marshal summarize event",
+			slog.Int64("chat_id", req.ChatId),
+			slog.String("event_id", hex.EncodeToString(eventID)),
+			slog.String("error", err.Error()),
+		)
+		return &adminpb.TriggerSummarizationResponse{
+			Success: false,
+			Message: func() *string { msg := "Failed to create summarization event"; return &msg }(),
+			EventId: func() *string { id := hex.EncodeToString(eventID); return &id }(),
+		}, nil
+	}
+
+	// Publish the event with the event ID as message ID
+	if err := s.publisher.Publish("summarize", message.NewMessage(hex.EncodeToString(eventID), eventData)); err != nil {
+		s.logger.Error("Failed to publish summarize event",
+			slog.Int64("chat_id", req.ChatId),
+			slog.String("event_id", hex.EncodeToString(eventID)),
+			slog.String("error", err.Error()),
+		)
+		return &adminpb.TriggerSummarizationResponse{
+			Success: false,
+			Message: func() *string { msg := "Failed to trigger summarization"; return &msg }(),
+			EventId: func() *string { id := hex.EncodeToString(eventID); return &id }(),
+		}, nil
+	}
+
+	s.logger.Info("Summarization event published successfully",
+		slog.Int64("chat_id", req.ChatId),
+		slog.String("event_id", hex.EncodeToString(eventID)),
+	)
+
+	return &adminpb.TriggerSummarizationResponse{
+		Success: true,
+		Message: func() *string { msg := "Summarization triggered successfully"; return &msg }(),
+		EventId: func() *string { id := hex.EncodeToString(eventID); return &id }(),
+	}, nil
 }
 
 // Helper methods to convert models to protobuf messages

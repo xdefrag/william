@@ -18,13 +18,16 @@ build:
 proto-gen:
 	@echo "Generating protobuf code..."
 	@mkdir -p $(PROTO_OUT)/adminpb
+	@rm -f $(PROTO_OUT)/adminpb/*.pb.go
 	protoc \
 		-I $(PROTO_SRC) \
-		--go_out=$(PROTO_OUT) \
-		--go_opt=module=github.com/xdefrag/william \
-		--go-grpc_out=$(PROTO_OUT) \
-		--go-grpc_opt=module=github.com/xdefrag/william \
+		--go_out=. \
+		--go-grpc_out=. \
 		$(PROTO_SRC)/william/admin/v1/*.proto
+	@if [ -d github.com/xdefrag/william/pkg/adminpb ]; then \
+		mv github.com/xdefrag/william/pkg/adminpb/* $(PROTO_OUT)/adminpb/ && \
+		rm -rf github.com; \
+	fi
 
 # Setup protobuf tools
 setup-proto:
