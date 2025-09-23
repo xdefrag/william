@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+	"time"
 
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/mymmrac/telego"
@@ -12,6 +13,7 @@ import (
 	williamcontext "github.com/xdefrag/william/internal/context"
 	"github.com/xdefrag/william/internal/gpt"
 	"github.com/xdefrag/william/internal/repo"
+	"github.com/xdefrag/william/pkg/models"
 )
 
 // Handlers handles bot events
@@ -114,6 +116,11 @@ func (h *Handlers) HandleMentionEvent(msg *message.Message) error {
 	userQuery := h.extractUserQuery(event.Text)
 	contextReq.UserQuery = userQuery
 
+	// Add reply context if present
+	contextReq.ReplyToText = event.ReplyToText
+	contextReq.ReplyToIsBot = event.ReplyToIsBot
+	contextReq.BotName = h.config.App.App.Name
+
 	// Generate response
 	response, err := h.gptClient.GenerateResponse(ctx, *contextReq)
 	if err != nil {
@@ -181,7 +188,7 @@ func (h *Handlers) extractUserQuery(text string) string {
 	return query
 }
 
-// sendResponse sends response message to chat
+// sendResponse sends response message to chat and saves it to database
 func (h *Handlers) sendResponse(ctx context.Context, chatID int64, topicID *int64, replyToMessageID int64, response string) error {
 	h.logger.InfoContext(ctx, "Sending response",
 		slog.Int64("chat_id", chatID),
@@ -228,7 +235,7 @@ func (h *Handlers) sendResponse(ctx context.Context, chatID int64, topicID *int6
 		}
 	}
 
-	_, err := h.bot.SendMessage(ctx, params)
+	sentMessage, err := h.bot.SendMessage(ctx, params)
 
 	// If topic message failed with "message thread not found", try sending to general chat
 	if err != nil && topicID != nil {
@@ -251,10 +258,58 @@ func (h *Handlers) sendResponse(ctx context.Context, chatID int64, topicID *int6
 				}
 			}
 
-			_, fallbackErr := h.bot.SendMessage(ctx, fallbackParams)
-			return fallbackErr
+			sentMessage, err = h.bot.SendMessage(ctx, fallbackParams)
+			if err != nil {
+				return err
+			}
+
+			// Update topicID to nil for database storage since we fell back to general chat
+			topicID = nil
+		} else {
+			return err
 		}
+	} else if err != nil {
+		return err
 	}
 
-	return err
+	// Save bot message to database after successful sending
+	if err := h.saveBotMessage(ctx, sentMessage, topicID, response); err != nil {
+		h.logger.ErrorContext(ctx, "Failed to save bot message to database", slog.Any("error", err),
+			slog.Int64("chat_id", chatID),
+			slog.Int("message_id", sentMessage.MessageID),
+		)
+		// Don't return error here as the message was already sent successfully
+	}
+
+	return nil
+}
+
+// saveBotMessage saves bot message to database
+func (h *Handlers) saveBotMessage(ctx context.Context, sentMessage *telego.Message, topicID *int64, responseText string) error {
+	// Get bot info to populate user fields
+	botInfo, err := h.bot.GetMe(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get bot info: %w", err)
+	}
+
+	// Create bot message model
+	var botUsername *string
+	if botInfo.Username != "" {
+		botUsername = &botInfo.Username
+	}
+
+	botMessage := &models.Message{
+		TelegramMsgID: int64(sentMessage.MessageID),
+		ChatID:        sentMessage.Chat.ID,
+		UserID:        botInfo.ID,
+		TopicID:       topicID,
+		IsBot:         true,
+		UserFirstName: botInfo.FirstName,
+		UserLastName:  nil, // Bots typically don't have last names
+		Username:      botUsername,
+		Text:          &responseText,
+		CreatedAt:     time.Now(),
+	}
+
+	return h.repo.SaveMessage(ctx, botMessage)
 }

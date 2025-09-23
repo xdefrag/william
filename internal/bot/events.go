@@ -26,16 +26,19 @@ func UnmarshalSummarizeEvent(data []byte) (SummarizeEvent, error) {
 
 // MentionEvent represents an event when bot is mentioned
 type MentionEvent struct {
-	ChatID    int64     `json:"chat_id"`
-	TopicID   *int64    `json:"topic_id,omitempty"`
-	UserID    int64     `json:"user_id"`
-	UserName  string    `json:"user_name"` // First name
-	Username  string    `json:"username"`  // @username (may be empty)
-	LastName  string    `json:"last_name"` // Last name (may be empty)
-	MessageID int64     `json:"message_id"`
-	Text      string    `json:"text"`
-	UserQuery string    `json:"user_query"` // Extracted user query from text
-	Timestamp time.Time `json:"timestamp"`
+	ChatID           int64     `json:"chat_id"`
+	TopicID          *int64    `json:"topic_id,omitempty"`
+	UserID           int64     `json:"user_id"`
+	UserName         string    `json:"user_name"` // First name
+	Username         string    `json:"username"`  // @username (may be empty)
+	LastName         string    `json:"last_name"` // Last name (may be empty)
+	MessageID        int64     `json:"message_id"`
+	Text             string    `json:"text"`
+	UserQuery        string    `json:"user_query"` // Extracted user query from text
+	ReplyToMessageID *int64    `json:"reply_to_message_id,omitempty"` // ID of message being replied to
+	ReplyToText      *string   `json:"reply_to_text,omitempty"`       // Text of message being replied to
+	ReplyToIsBot     *bool     `json:"reply_to_is_bot,omitempty"`     // Whether replied-to message is from bot
+	Timestamp        time.Time `json:"timestamp"`
 }
 
 // Marshal serializes the event to JSON

@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/xdefrag/william/internal/config"
 	"github.com/xdefrag/william/internal/gpt"
 	"github.com/xdefrag/william/internal/repo"
 	"github.com/xdefrag/william/pkg/models"
@@ -16,14 +17,16 @@ import (
 type Summarizer struct {
 	repo      *repo.Repository
 	gptClient *gpt.Client
+	config    *config.Config
 	logger    *slog.Logger
 }
 
 // NewSummarizer creates a new summarizer
-func NewSummarizer(repo *repo.Repository, gptClient *gpt.Client, logger *slog.Logger) *Summarizer {
+func NewSummarizer(repo *repo.Repository, gptClient *gpt.Client, config *config.Config, logger *slog.Logger) *Summarizer {
 	return &Summarizer{
 		repo:      repo,
 		gptClient: gptClient,
+		config:    config,
 		logger:    logger.WithGroup("summarizer"),
 	}
 }
@@ -119,6 +122,7 @@ func (s *Summarizer) summarizeTopicMessages(ctx context.Context, chatID int64, t
 		Messages:              messages,
 		ExistingChatSummary:   existingChatSummary,
 		ExistingUserSummaries: existingUserSummaries,
+		BotName:               s.config.App.App.Name,
 	}
 
 	response, err := s.gptClient.Summarize(ctx, req)

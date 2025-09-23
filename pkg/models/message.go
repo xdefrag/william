@@ -18,6 +18,7 @@ type Message struct {
 	ChatID        int64     `json:"chat_id" db:"chat_id"`
 	UserID        int64     `json:"user_id" db:"user_id"`
 	TopicID       *int64    `json:"topic_id" db:"topic_id"`
+	IsBot         bool      `json:"is_bot" db:"is_bot"`
 	UserFirstName string    `json:"user_first_name" db:"user_first_name"`
 	UserLastName  *string   `json:"user_last_name" db:"user_last_name"`
 	Username      *string   `json:"username" db:"username"`

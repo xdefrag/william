@@ -39,6 +39,7 @@ type SummarizeRequest struct {
 	Messages              []*models.Message
 	ExistingChatSummary   *models.ChatSummary
 	ExistingUserSummaries map[int64]*models.UserSummary // userID -> UserSummary
+	BotName               string                        // Bot name from config
 }
 
 // SummarizeResponse represents the structured response from GPT for summarization
@@ -64,12 +65,15 @@ type UserProfileData struct {
 
 // ContextRequest represents request for context-aware response
 type ContextRequest struct {
-	ChatSummary    *models.ChatSummary
-	UserSummary    *models.UserSummary
-	RecentMessages []*models.Message
-	UserQuery      string
-	UserName       string
-	UserID         int64
+	ChatSummary      *models.ChatSummary
+	UserSummary      *models.UserSummary
+	RecentMessages   []*models.Message
+	UserQuery        string
+	UserName         string
+	UserID           int64
+	ReplyToText      *string // Text of message being replied to
+	ReplyToIsBot     *bool   // Whether replied-to message is from bot
+	BotName          string  // Bot name from config
 }
 
 // Summarize generates summaries for chat and users
@@ -78,18 +82,24 @@ func (c *Client) Summarize(ctx context.Context, req SummarizeRequest) (*Summariz
 	var messagesText string
 	for _, msg := range req.Messages {
 		if msg.Text != nil {
-			// Build user identification string
-			userInfo := fmt.Sprintf("User ID: %d, Name: %s", msg.UserID, msg.UserFirstName)
+			var senderInfo string
+			if msg.IsBot {
+				// This is a bot message
+				senderInfo = fmt.Sprintf("Bot (%s)", req.BotName)
+			} else {
+				// Build user identification string
+				senderInfo = fmt.Sprintf("User ID: %d, Name: %s", msg.UserID, msg.UserFirstName)
 
-			if msg.UserLastName != nil && *msg.UserLastName != "" {
-				userInfo += fmt.Sprintf(" %s", *msg.UserLastName)
+				if msg.UserLastName != nil && *msg.UserLastName != "" {
+					senderInfo += fmt.Sprintf(" %s", *msg.UserLastName)
+				}
+
+				if msg.Username != nil && *msg.Username != "" {
+					senderInfo += fmt.Sprintf(", Username: @%s", *msg.Username)
+				}
 			}
 
-			if msg.Username != nil && *msg.Username != "" {
-				userInfo += fmt.Sprintf(", Username: @%s", *msg.Username)
-			}
-
-			messagesText += fmt.Sprintf("%s: %s\n", userInfo, *msg.Text)
+			messagesText += fmt.Sprintf("%s: %s\n", senderInfo, *msg.Text)
 		}
 	}
 
@@ -249,23 +259,41 @@ func (c *Client) GenerateResponse(ctx context.Context, req ContextRequest) (stri
 		recentContext = "\n\nRecent messages:\n"
 		for _, msg := range req.RecentMessages {
 			if msg.Text != nil {
-				// Build user identification string
-				userInfo := fmt.Sprintf("User ID: %d, Name: %s", msg.UserID, msg.UserFirstName)
+				var senderInfo string
+				if msg.IsBot {
+					// This is a bot message
+					senderInfo = fmt.Sprintf("Bot (%s)", req.BotName)
+				} else {
+					// Build user identification string
+					senderInfo = fmt.Sprintf("User ID: %d, Name: %s", msg.UserID, msg.UserFirstName)
 
-				if msg.UserLastName != nil && *msg.UserLastName != "" {
-					userInfo += fmt.Sprintf(" %s", *msg.UserLastName)
+					if msg.UserLastName != nil && *msg.UserLastName != "" {
+						senderInfo += fmt.Sprintf(" %s", *msg.UserLastName)
+					}
+
+					if msg.Username != nil && *msg.Username != "" {
+						senderInfo += fmt.Sprintf(", Username: @%s", *msg.Username)
+					}
 				}
 
-				if msg.Username != nil && *msg.Username != "" {
-					userInfo += fmt.Sprintf(", Username: @%s", *msg.Username)
-				}
-
-				recentContext += fmt.Sprintf("%s: %s\n", userInfo, *msg.Text)
+				recentContext += fmt.Sprintf("%s: %s\n", senderInfo, *msg.Text)
 			}
 		}
 	}
 
-	userPrompt := recentContext + fmt.Sprintf("\n\nUser query from user ID %d (%s): %s", req.UserID, req.UserName, req.UserQuery)
+	// Add reply context if user is replying to a message
+	var replyContext string
+	if req.ReplyToText != nil && *req.ReplyToText != "" {
+		var repliedToSender string
+		if req.ReplyToIsBot != nil && *req.ReplyToIsBot {
+			repliedToSender = fmt.Sprintf("Bot (%s)", req.BotName)
+		} else {
+			repliedToSender = "User"
+		}
+		replyContext = fmt.Sprintf("\n\nUser is replying to this message:\n%s: %s", repliedToSender, *req.ReplyToText)
+	}
+
+	userPrompt := recentContext + replyContext + fmt.Sprintf("\n\nUser query from user ID %d (%s): %s", req.UserID, req.UserName, req.UserQuery)
 
 	// Debug log prompts before sending to OpenAI
 	c.logger.DebugContext(ctx, "Sending prompts to OpenAI for response generation",

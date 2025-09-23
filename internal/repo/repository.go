@@ -47,16 +47,16 @@ func (j *JSONB) Scan(value interface{}) error {
 
 func (r *Repository) SaveMessage(ctx context.Context, msg *models.Message) error {
 	query := `
-		INSERT INTO messages (telegram_msg_id, chat_id, user_id, topic_id, user_first_name, user_last_name, username, text, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		INSERT INTO messages (telegram_msg_id, chat_id, user_id, topic_id, is_bot, user_first_name, user_last_name, username, text, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		RETURNING id`
 
-	return r.pool.QueryRow(ctx, query, msg.TelegramMsgID, msg.ChatID, msg.UserID, msg.TopicID, msg.UserFirstName, msg.UserLastName, msg.Username, msg.Text, msg.CreatedAt).Scan(&msg.ID)
+	return r.pool.QueryRow(ctx, query, msg.TelegramMsgID, msg.ChatID, msg.UserID, msg.TopicID, msg.IsBot, msg.UserFirstName, msg.UserLastName, msg.Username, msg.Text, msg.CreatedAt).Scan(&msg.ID)
 }
 
 func (r *Repository) GetLatestMessagesByChatID(ctx context.Context, chatID int64, limit int) ([]*models.Message, error) {
 	query := `
-		SELECT id, telegram_msg_id, chat_id, user_id, topic_id, user_first_name, user_last_name, username, text, created_at
+		SELECT id, telegram_msg_id, chat_id, user_id, topic_id, is_bot, user_first_name, user_last_name, username, text, created_at
 		FROM messages
 		WHERE chat_id = $1
 		ORDER BY id DESC
@@ -71,7 +71,7 @@ func (r *Repository) GetLatestMessagesByChatID(ctx context.Context, chatID int64
 	var messages []*models.Message
 	for rows.Next() {
 		msg := &models.Message{}
-		err := rows.Scan(&msg.ID, &msg.TelegramMsgID, &msg.ChatID, &msg.UserID, &msg.TopicID, &msg.UserFirstName, &msg.UserLastName, &msg.Username, &msg.Text, &msg.CreatedAt)
+		err := rows.Scan(&msg.ID, &msg.TelegramMsgID, &msg.ChatID, &msg.UserID, &msg.TopicID, &msg.IsBot, &msg.UserFirstName, &msg.UserLastName, &msg.Username, &msg.Text, &msg.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -83,7 +83,7 @@ func (r *Repository) GetLatestMessagesByChatID(ctx context.Context, chatID int64
 
 func (r *Repository) GetMessagesAfterID(ctx context.Context, chatID, afterID int64) ([]*models.Message, error) {
 	query := `
-		SELECT id, telegram_msg_id, chat_id, user_id, topic_id, user_first_name, user_last_name, username, text, created_at
+		SELECT id, telegram_msg_id, chat_id, user_id, topic_id, is_bot, user_first_name, user_last_name, username, text, created_at
 		FROM messages
 		WHERE chat_id = $1 AND id > $2
 		ORDER BY id ASC`
@@ -97,7 +97,7 @@ func (r *Repository) GetMessagesAfterID(ctx context.Context, chatID, afterID int
 	var messages []*models.Message
 	for rows.Next() {
 		msg := &models.Message{}
-		err := rows.Scan(&msg.ID, &msg.TelegramMsgID, &msg.ChatID, &msg.UserID, &msg.TopicID, &msg.UserFirstName, &msg.UserLastName, &msg.Username, &msg.Text, &msg.CreatedAt)
+		err := rows.Scan(&msg.ID, &msg.TelegramMsgID, &msg.ChatID, &msg.UserID, &msg.TopicID, &msg.IsBot, &msg.UserFirstName, &msg.UserLastName, &msg.Username, &msg.Text, &msg.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -110,7 +110,7 @@ func (r *Repository) GetMessagesAfterID(ctx context.Context, chatID, afterID int
 // GetMessagesAfterIDInTopic returns messages after specific ID within a specific topic
 func (r *Repository) GetMessagesAfterIDInTopic(ctx context.Context, chatID int64, topicID *int64, afterID int64) ([]*models.Message, error) {
 	query := `
-		SELECT id, telegram_msg_id, chat_id, user_id, topic_id, user_first_name, user_last_name, username, text, created_at
+		SELECT id, telegram_msg_id, chat_id, user_id, topic_id, is_bot, user_first_name, user_last_name, username, text, created_at
 		FROM messages
 		WHERE chat_id = $1 AND ($2::bigint IS NULL AND topic_id IS NULL OR topic_id = $2) AND id > $3
 		ORDER BY id ASC`
@@ -124,7 +124,7 @@ func (r *Repository) GetMessagesAfterIDInTopic(ctx context.Context, chatID int64
 	var messages []*models.Message
 	for rows.Next() {
 		msg := &models.Message{}
-		err := rows.Scan(&msg.ID, &msg.TelegramMsgID, &msg.ChatID, &msg.UserID, &msg.TopicID, &msg.UserFirstName, &msg.UserLastName, &msg.Username, &msg.Text, &msg.CreatedAt)
+		err := rows.Scan(&msg.ID, &msg.TelegramMsgID, &msg.ChatID, &msg.UserID, &msg.TopicID, &msg.IsBot, &msg.UserFirstName, &msg.UserLastName, &msg.Username, &msg.Text, &msg.CreatedAt)
 		if err != nil {
 			return nil, err
 		}

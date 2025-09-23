@@ -288,6 +288,24 @@ func (l *Listener) publishMentionEvent(ctx context.Context, msg *telego.Message)
 		Timestamp: time.Now(),
 	}
 
+	// Capture ReplyToMessage information if present
+	if msg.ReplyToMessage != nil {
+		replyToMessageID := int64(msg.ReplyToMessage.MessageID)
+		event.ReplyToMessageID = &replyToMessageID
+
+		// Capture text from reply message
+		replyText := l.getMessageText(msg.ReplyToMessage)
+		if replyText != "" {
+			event.ReplyToText = &replyText
+		}
+
+		// Check if replied-to message is from bot
+		if msg.ReplyToMessage.From != nil {
+			isBot := msg.ReplyToMessage.From.IsBot
+			event.ReplyToIsBot = &isBot
+		}
+	}
+
 	msgData, err := event.Marshal()
 	if err != nil {
 		return fmt.Errorf("failed to marshal mention event: %w", err)
