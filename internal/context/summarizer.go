@@ -28,7 +28,21 @@ func NewSummarizer(repo *repo.Repository, gptClient *gpt.Client, logger *slog.Lo
 	}
 }
 
-// SummarizeChat summarizes recent messages for a chat
+// TopicKey represents a safe key for grouping messages by topic
+type TopicKey struct {
+	hasValue bool
+	value    int64
+}
+
+// NewTopicKey creates a TopicKey from a nullable int64
+func NewTopicKey(topicID *int64) TopicKey {
+	if topicID == nil {
+		return TopicKey{hasValue: false}
+	}
+	return TopicKey{hasValue: true, value: *topicID}
+}
+
+// SummarizeChat summarizes recent messages for a chat, grouping by topic
 func (s *Summarizer) SummarizeChat(ctx context.Context, chatID int64, maxMessages int) error {
 	// Get recent messages
 	messages, err := s.repo.GetLatestMessagesByChatID(ctx, chatID, maxMessages)
@@ -40,14 +54,41 @@ func (s *Summarizer) SummarizeChat(ctx context.Context, chatID int64, maxMessage
 		return nil // Nothing to summarize
 	}
 
+	// Group messages by topic
+	topicGroups := make(map[TopicKey][]*models.Message)
+	for _, msg := range messages {
+		key := NewTopicKey(msg.TopicID)
+		topicGroups[key] = append(topicGroups[key], msg)
+	}
+
+	// Summarize each topic group
+	for topicKey, topicMessages := range topicGroups {
+		if err := s.summarizeTopicMessages(ctx, chatID, topicKey, topicMessages); err != nil {
+			// Log error but continue with other topics
+			s.logger.Error("Failed to summarize topic messages",
+				slog.Int64("chat_id", chatID),
+				slog.Bool("has_topic", topicKey.hasValue),
+				slog.String("error", err.Error()))
+		}
+	}
+
+	return nil
+}
+
+// summarizeTopicMessages summarizes messages for a specific topic
+func (s *Summarizer) summarizeTopicMessages(ctx context.Context, chatID int64, topicKey TopicKey, messages []*models.Message) error {
 	// Reverse messages to chronological order
-	// Reverse to process from oldest to newest
 	for i, j := 0, len(messages)-1; i < j; i, j = i+1, j-1 {
 		messages[i], messages[j] = messages[j], messages[i]
 	}
 
-	// Get existing chat summary
-	existingChatSummary, err := s.repo.GetLatestChatSummary(ctx, chatID)
+	var topicID *int64
+	if topicKey.hasValue {
+		topicID = &topicKey.value
+	}
+
+	// Get existing chat summary for this topic
+	existingChatSummary, err := s.repo.GetLatestChatSummaryByTopic(ctx, chatID, topicID)
 	if err != nil {
 		return fmt.Errorf("failed to get existing chat summary: %w", err)
 	}
@@ -85,9 +126,10 @@ func (s *Summarizer) SummarizeChat(ctx context.Context, chatID int64, maxMessage
 		return fmt.Errorf("failed to summarize with GPT: %w", err)
 	}
 
-	// Save chat summary
+	// Save chat summary with topic ID
 	chatSummary := &models.ChatSummary{
 		ChatID:     chatID,
+		TopicID:    topicID,
 		Summary:    response.ChatSummary.Summary,
 		TopicsJSON: make(map[string]interface{}),
 	}
@@ -164,6 +206,48 @@ func (s *Summarizer) SummarizeChat(ctx context.Context, chatID int64, maxMessage
 	}
 
 	return nil
+}
+
+// SummarizeChatTopic summarizes messages for a specific chat topic
+func (s *Summarizer) SummarizeChatTopic(ctx context.Context, chatID int64, topicID *int64, maxMessages int) error {
+	// Get recent messages for this specific topic
+	var messages []*models.Message
+
+	if topicID != nil {
+		// Get messages from specific topic using GetLatestMessagesByChatID and filter
+		allMessages, err := s.repo.GetLatestMessagesByChatID(ctx, chatID, maxMessages)
+		if err != nil {
+			return fmt.Errorf("failed to get messages: %w", err)
+		}
+
+		// Filter messages by topic
+		for _, msg := range allMessages {
+			if msg.TopicID != nil && topicID != nil && *msg.TopicID == *topicID {
+				messages = append(messages, msg)
+			}
+		}
+	} else {
+		// Get general chat messages (topic_id IS NULL)
+		allMessages, err := s.repo.GetLatestMessagesByChatID(ctx, chatID, maxMessages)
+		if err != nil {
+			return fmt.Errorf("failed to get messages: %w", err)
+		}
+
+		// Filter messages without topic
+		for _, msg := range allMessages {
+			if msg.TopicID == nil {
+				messages = append(messages, msg)
+			}
+		}
+	}
+
+	if len(messages) == 0 {
+		return nil // Nothing to summarize
+	}
+
+	// Use existing summarizeTopicMessages method
+	topicKey := NewTopicKey(topicID)
+	return s.summarizeTopicMessages(ctx, chatID, topicKey, messages)
 }
 
 // SummarizeAllActiveChats summarizes all chats with recent activity

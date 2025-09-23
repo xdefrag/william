@@ -47,19 +47,19 @@ func (j *JSONB) Scan(value interface{}) error {
 
 func (r *Repository) SaveMessage(ctx context.Context, msg *models.Message) error {
 	query := `
-		INSERT INTO messages (telegram_msg_id, chat_id, user_id, user_first_name, user_last_name, username, text, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		INSERT INTO messages (telegram_msg_id, chat_id, user_id, topic_id, user_first_name, user_last_name, username, text, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		RETURNING id`
 
-	return r.pool.QueryRow(ctx, query, msg.TelegramMsgID, msg.ChatID, msg.UserID, msg.UserFirstName, msg.UserLastName, msg.Username, msg.Text, msg.CreatedAt).Scan(&msg.ID)
+	return r.pool.QueryRow(ctx, query, msg.TelegramMsgID, msg.ChatID, msg.UserID, msg.TopicID, msg.UserFirstName, msg.UserLastName, msg.Username, msg.Text, msg.CreatedAt).Scan(&msg.ID)
 }
 
 func (r *Repository) GetLatestMessagesByChatID(ctx context.Context, chatID int64, limit int) ([]*models.Message, error) {
 	query := `
-		SELECT id, telegram_msg_id, chat_id, user_id, user_first_name, user_last_name, username, text, created_at
-		FROM messages 
-		WHERE chat_id = $1 
-		ORDER BY id DESC 
+		SELECT id, telegram_msg_id, chat_id, user_id, topic_id, user_first_name, user_last_name, username, text, created_at
+		FROM messages
+		WHERE chat_id = $1
+		ORDER BY id DESC
 		LIMIT $2`
 
 	rows, err := r.pool.Query(ctx, query, chatID, limit)
@@ -71,7 +71,7 @@ func (r *Repository) GetLatestMessagesByChatID(ctx context.Context, chatID int64
 	var messages []*models.Message
 	for rows.Next() {
 		msg := &models.Message{}
-		err := rows.Scan(&msg.ID, &msg.TelegramMsgID, &msg.ChatID, &msg.UserID, &msg.UserFirstName, &msg.UserLastName, &msg.Username, &msg.Text, &msg.CreatedAt)
+		err := rows.Scan(&msg.ID, &msg.TelegramMsgID, &msg.ChatID, &msg.UserID, &msg.TopicID, &msg.UserFirstName, &msg.UserLastName, &msg.Username, &msg.Text, &msg.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -83,8 +83,8 @@ func (r *Repository) GetLatestMessagesByChatID(ctx context.Context, chatID int64
 
 func (r *Repository) GetMessagesAfterID(ctx context.Context, chatID, afterID int64) ([]*models.Message, error) {
 	query := `
-		SELECT id, telegram_msg_id, chat_id, user_id, user_first_name, user_last_name, username, text, created_at
-		FROM messages 
+		SELECT id, telegram_msg_id, chat_id, user_id, topic_id, user_first_name, user_last_name, username, text, created_at
+		FROM messages
 		WHERE chat_id = $1 AND id > $2
 		ORDER BY id ASC`
 
@@ -97,7 +97,34 @@ func (r *Repository) GetMessagesAfterID(ctx context.Context, chatID, afterID int
 	var messages []*models.Message
 	for rows.Next() {
 		msg := &models.Message{}
-		err := rows.Scan(&msg.ID, &msg.TelegramMsgID, &msg.ChatID, &msg.UserID, &msg.UserFirstName, &msg.UserLastName, &msg.Username, &msg.Text, &msg.CreatedAt)
+		err := rows.Scan(&msg.ID, &msg.TelegramMsgID, &msg.ChatID, &msg.UserID, &msg.TopicID, &msg.UserFirstName, &msg.UserLastName, &msg.Username, &msg.Text, &msg.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+		messages = append(messages, msg)
+	}
+
+	return messages, rows.Err()
+}
+
+// GetMessagesAfterIDInTopic returns messages after specific ID within a specific topic
+func (r *Repository) GetMessagesAfterIDInTopic(ctx context.Context, chatID int64, topicID *int64, afterID int64) ([]*models.Message, error) {
+	query := `
+		SELECT id, telegram_msg_id, chat_id, user_id, topic_id, user_first_name, user_last_name, username, text, created_at
+		FROM messages
+		WHERE chat_id = $1 AND ($2::bigint IS NULL AND topic_id IS NULL OR topic_id = $2) AND id > $3
+		ORDER BY id ASC`
+
+	rows, err := r.pool.Query(ctx, query, chatID, topicID, afterID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var messages []*models.Message
+	for rows.Next() {
+		msg := &models.Message{}
+		err := rows.Scan(&msg.ID, &msg.TelegramMsgID, &msg.ChatID, &msg.UserID, &msg.TopicID, &msg.UserFirstName, &msg.UserLastName, &msg.Username, &msg.Text, &msg.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -111,10 +138,10 @@ func (r *Repository) GetMessagesAfterID(ctx context.Context, chatID, afterID int
 
 func (r *Repository) SaveChatSummary(ctx context.Context, summary *models.ChatSummary) error {
 	query := `
-		INSERT INTO chat_summaries (chat_id, summary, topics_json, next_events, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6)
-		ON CONFLICT (chat_id) 
-		DO UPDATE SET 
+		INSERT INTO chat_summaries (chat_id, topic_id, summary, topics_json, next_events, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		ON CONFLICT (chat_id, topic_id)
+		DO UPDATE SET
 			summary = EXCLUDED.summary,
 			topics_json = EXCLUDED.topics_json,
 			next_events = EXCLUDED.next_events,
@@ -132,15 +159,15 @@ func (r *Repository) SaveChatSummary(ctx context.Context, summary *models.ChatSu
 		summary.CreatedAt = now
 	}
 
-	return r.pool.QueryRow(ctx, query, summary.ChatID, summary.Summary, topicsJSON, summary.NextEvents, summary.CreatedAt, summary.UpdatedAt).Scan(&summary.ID)
+	return r.pool.QueryRow(ctx, query, summary.ChatID, summary.TopicID, summary.Summary, topicsJSON, summary.NextEvents, summary.CreatedAt, summary.UpdatedAt).Scan(&summary.ID)
 }
 
 func (r *Repository) GetLatestChatSummary(ctx context.Context, chatID int64) (*models.ChatSummary, error) {
 	query := `
-		SELECT id, chat_id, summary, topics_json, next_events, created_at, updated_at
-		FROM chat_summaries 
-		WHERE chat_id = $1 
-		ORDER BY updated_at DESC 
+		SELECT id, chat_id, topic_id, summary, topics_json, next_events, created_at, updated_at
+		FROM chat_summaries
+		WHERE chat_id = $1 AND topic_id IS NULL
+		ORDER BY updated_at DESC
 		LIMIT 1`
 
 	row := r.pool.QueryRow(ctx, query, chatID)
@@ -148,7 +175,36 @@ func (r *Repository) GetLatestChatSummary(ctx context.Context, chatID int64) (*m
 	summary := &models.ChatSummary{}
 	var topicsJSON []byte
 
-	err := row.Scan(&summary.ID, &summary.ChatID, &summary.Summary, &topicsJSON, &summary.NextEvents, &summary.CreatedAt, &summary.UpdatedAt)
+	err := row.Scan(&summary.ID, &summary.ChatID, &summary.TopicID, &summary.Summary, &topicsJSON, &summary.NextEvents, &summary.CreatedAt, &summary.UpdatedAt)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	if err := json.Unmarshal(topicsJSON, &summary.TopicsJSON); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal topics JSON: %w", err)
+	}
+
+	return summary, nil
+}
+
+// GetLatestChatSummaryByTopic returns the latest chat summary for a specific topic
+func (r *Repository) GetLatestChatSummaryByTopic(ctx context.Context, chatID int64, topicID *int64) (*models.ChatSummary, error) {
+	query := `
+		SELECT id, chat_id, topic_id, summary, topics_json, next_events, created_at, updated_at
+		FROM chat_summaries
+		WHERE chat_id = $1 AND ($2::bigint IS NULL AND topic_id IS NULL OR topic_id = $2)
+		ORDER BY updated_at DESC
+		LIMIT 1`
+
+	row := r.pool.QueryRow(ctx, query, chatID, topicID)
+
+	summary := &models.ChatSummary{}
+	var topicsJSON []byte
+
+	err := row.Scan(&summary.ID, &summary.ChatID, &summary.TopicID, &summary.Summary, &topicsJSON, &summary.NextEvents, &summary.CreatedAt, &summary.UpdatedAt)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, nil
@@ -285,6 +341,24 @@ func (r *Repository) GetLatestUserSummary(ctx context.Context, chatID, userID in
 	}
 
 	return summary, nil
+}
+
+// IsChatTopicEnabled checks if chat has topic support enabled
+func (r *Repository) IsChatTopicEnabled(ctx context.Context, chatID int64) (bool, error) {
+	query := `
+		SELECT EXISTS(
+			SELECT 1 FROM messages
+			WHERE chat_id = $1 AND topic_id > 0
+			LIMIT 1
+		)`
+
+	var hasTopics bool
+	err := r.pool.QueryRow(ctx, query, chatID).Scan(&hasTopics)
+	if err != nil {
+		return false, fmt.Errorf("failed to check topic support: %w", err)
+	}
+
+	return hasTopics, nil
 }
 
 // GetActiveChatIDs returns list of chat IDs that have recent messages
@@ -474,19 +548,19 @@ func (r *Repository) GetMessageCounter(ctx context.Context, chatID int64) (int, 
 	return count, nil
 }
 
-// IncrementMessageCounter increments the message counter for a chat and returns the new count
-func (r *Repository) IncrementMessageCounter(ctx context.Context, chatID int64) (int, error) {
+// IncrementMessageCounter increments the message counter for a chat/topic and returns the new count
+func (r *Repository) IncrementMessageCounter(ctx context.Context, chatID int64, topicID *int64) (int, error) {
 	query := `
-		INSERT INTO message_counters (chat_id, count, updated_at)
-		VALUES ($1, 1, $2)
-		ON CONFLICT (chat_id) 
-		DO UPDATE SET 
+		INSERT INTO message_counters (chat_id, topic_id, count, updated_at)
+		VALUES ($1, $2, 1, $3)
+		ON CONFLICT (chat_id, topic_id)
+		DO UPDATE SET
 			count = message_counters.count + 1,
 			updated_at = EXCLUDED.updated_at
 		RETURNING count`
 
 	var count int
-	err := r.pool.QueryRow(ctx, query, chatID, time.Now()).Scan(&count)
+	err := r.pool.QueryRow(ctx, query, chatID, topicID, time.Now()).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("failed to increment message counter: %w", err)
 	}
@@ -494,17 +568,17 @@ func (r *Repository) IncrementMessageCounter(ctx context.Context, chatID int64) 
 	return count, nil
 }
 
-// ResetMessageCounter resets the message counter for a chat to 0
-func (r *Repository) ResetMessageCounter(ctx context.Context, chatID int64) error {
+// ResetMessageCounter resets the message counter for a specific chat/topic to 0
+func (r *Repository) ResetMessageCounter(ctx context.Context, chatID int64, topicID *int64) error {
 	query := `
-		INSERT INTO message_counters (chat_id, count, updated_at)
-		VALUES ($1, 0, $2)
-		ON CONFLICT (chat_id) 
-		DO UPDATE SET 
+		INSERT INTO message_counters (chat_id, topic_id, count, updated_at)
+		VALUES ($1, $2, 0, $3)
+		ON CONFLICT (chat_id, topic_id)
+		DO UPDATE SET
 			count = 0,
 			updated_at = EXCLUDED.updated_at`
 
-	_, err := r.pool.Exec(ctx, query, chatID, time.Now())
+	_, err := r.pool.Exec(ctx, query, chatID, topicID, time.Now())
 	if err != nil {
 		return fmt.Errorf("failed to reset message counter: %w", err)
 	}

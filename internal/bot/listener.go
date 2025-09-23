@@ -72,6 +72,14 @@ func (l *Listener) getMessageText(msg *telego.Message) string {
 	return ""
 }
 
+// getTopicID extracts topic ID from message using MessageThreadID
+func (l *Listener) getTopicID(msg *telego.Message) *int64 {
+	// For now, always return MessageThreadID value (0 or topic ID)
+	// The handler will decide whether to use it based on chat topic support
+	topicID := int64(msg.MessageThreadID)
+	return &topicID
+}
+
 // handleMessage processes incoming message
 func (l *Listener) handleMessage(ctx context.Context, msg *telego.Message) {
 	// Get text from either Text or Caption field
@@ -114,6 +122,7 @@ func (l *Listener) handleMessage(ctx context.Context, msg *telego.Message) {
 		TelegramMsgID: int64(msg.MessageID),
 		ChatID:        msg.Chat.ID,
 		UserID:        msg.From.ID,
+		TopicID:       l.getTopicID(msg),
 		UserFirstName: msg.From.FirstName,
 		UserLastName:  lastName,
 		Username:      username,
@@ -139,41 +148,48 @@ func (l *Listener) handleMessage(ctx context.Context, msg *telego.Message) {
 	}
 
 	// Increment message counter and check if we need to summarize
-	count, err := l.repo.IncrementMessageCounter(ctx, msg.Chat.ID)
+	topicID := l.getTopicID(msg)
+	count, err := l.repo.IncrementMessageCounter(ctx, msg.Chat.ID, topicID)
 	if err != nil {
 		l.logger.ErrorContext(ctx, "Failed to increment message counter", slog.Any("error", err),
 			slog.Int64("chat_id", msg.Chat.ID),
+			slog.Any("topic_id", topicID),
 		)
 		return
 	}
 
 	l.logger.InfoContext(ctx, "Message counter incremented",
 		slog.Int64("chat_id", msg.Chat.ID),
+		slog.Any("topic_id", topicID),
 		slog.Int("count", count),
 		slog.Int("limit", l.config.App.Limits.MaxMsgBuffer),
 	)
 
 	if count >= l.config.App.Limits.MaxMsgBuffer {
-		// Reset counter and trigger summarization
-		if err := l.repo.ResetMessageCounter(ctx, msg.Chat.ID); err != nil {
+		// Reset counter and trigger summarization for this specific topic
+		if err := l.repo.ResetMessageCounter(ctx, msg.Chat.ID, topicID); err != nil {
 			l.logger.ErrorContext(ctx, "Failed to reset message counter", slog.Any("error", err),
 				slog.Int64("chat_id", msg.Chat.ID),
+				slog.Any("topic_id", topicID),
 			)
 			return
 		}
 
-		l.logger.InfoContext(ctx, "Triggering summarization",
+		l.logger.InfoContext(ctx, "Triggering topic-specific summarization",
 			slog.Int64("chat_id", msg.Chat.ID),
+			slog.Any("topic_id", topicID),
 		)
 
-		// Publish summarization event
-		if err := l.publishSummarizeEvent(ctx, msg.Chat.ID); err != nil {
+		// Publish summarization event for specific topic
+		if err := l.publishSummarizeEvent(ctx, msg.Chat.ID, topicID); err != nil {
 			l.logger.ErrorContext(ctx, "Failed to publish summarize event", slog.Any("error", err),
 				slog.Int64("chat_id", msg.Chat.ID),
+				slog.Any("topic_id", topicID),
 			)
 		} else {
 			l.logger.InfoContext(ctx, "Summarize event published successfully",
 				slog.Int64("chat_id", msg.Chat.ID),
+				slog.Any("topic_id", topicID),
 			)
 		}
 	}
@@ -211,19 +227,29 @@ func (l *Listener) isMentionOrReply(msg *telego.Message) bool {
 
 // handleMention handles mentions and replies to the bot
 func (l *Listener) handleMention(ctx context.Context, msg *telego.Message) {
+	topicID := l.getTopicID(msg)
+	l.logger.InfoContext(ctx, "Handling mention",
+		slog.Int64("chat_id", msg.Chat.ID),
+		slog.Int64("user_id", msg.From.ID),
+		slog.Any("topic_id", topicID),
+		slog.Int("message_thread_id", msg.MessageThreadID),
+	)
+
 	// Publish mention event for handler to process
 	if err := l.publishMentionEvent(ctx, msg); err != nil {
 		l.logger.ErrorContext(ctx, "Failed to publish mention event", slog.Any("error", err),
 			slog.Int64("chat_id", msg.Chat.ID),
 			slog.Int64("user_id", msg.From.ID),
+			slog.Any("topic_id", topicID),
 		)
 	}
 }
 
 // publishSummarizeEvent publishes event to trigger summarization
-func (l *Listener) publishSummarizeEvent(ctx context.Context, chatID int64) error {
+func (l *Listener) publishSummarizeEvent(ctx context.Context, chatID int64, topicID *int64) error {
 	event := SummarizeEvent{
 		ChatID:    chatID,
+		TopicID:   topicID,
 		Timestamp: time.Now(),
 	}
 
@@ -252,6 +278,7 @@ func (l *Listener) publishMentionEvent(ctx context.Context, msg *telego.Message)
 
 	event := MentionEvent{
 		ChatID:    msg.Chat.ID,
+		TopicID:   l.getTopicID(msg),
 		UserID:    msg.From.ID,
 		UserName:  msg.From.FirstName,
 		Username:  username,

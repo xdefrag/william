@@ -57,18 +57,21 @@ func (h *Handlers) HandleSummarizeEvent(msg *message.Message) error {
 
 	h.logger.InfoContext(ctx, "Processing summarize event",
 		slog.Int64("chat_id", event.ChatID),
+		slog.Any("topic_id", event.TopicID),
 	)
 
-	// Perform summarization
-	if err := h.summarizer.SummarizeChat(ctx, event.ChatID, h.config.App.Limits.SummarizeMaxMessages); err != nil {
-		h.logger.ErrorContext(ctx, "Failed to summarize chat", slog.Any("error", err),
+	// Perform topic-specific summarization
+	if err := h.summarizer.SummarizeChatTopic(ctx, event.ChatID, event.TopicID, h.config.App.Limits.SummarizeMaxMessages); err != nil {
+		h.logger.ErrorContext(ctx, "Failed to summarize chat topic", slog.Any("error", err),
 			slog.Int64("chat_id", event.ChatID),
+			slog.Any("topic_id", event.TopicID),
 		)
-		return fmt.Errorf("failed to summarize chat: %w", err)
+		return fmt.Errorf("failed to summarize chat topic: %w", err)
 	}
 
-	h.logger.InfoContext(ctx, "Chat summarized successfully",
+	h.logger.InfoContext(ctx, "Chat topic summarized successfully",
 		slog.Int64("chat_id", event.ChatID),
+		slog.Any("topic_id", event.TopicID),
 	)
 
 	return nil
@@ -87,10 +90,18 @@ func (h *Handlers) HandleMentionEvent(msg *message.Message) error {
 		slog.Int64("chat_id", event.ChatID),
 		slog.Int64("user_id", event.UserID),
 		slog.String("user_name", event.UserName),
+		slog.Any("event_topic_id", event.TopicID),
 	)
 
 	// Build context for the mention
-	contextReq, err := h.builder.BuildContextForResponse(ctx, event.ChatID, event.UserID, event.UserName)
+	params := williamcontext.BuildContextForResponseParams{
+		ChatID:   event.ChatID,
+		TopicID:  event.TopicID,
+		UserID:   event.UserID,
+		UserName: event.UserName,
+	}
+
+	contextReq, err := h.builder.BuildContextForResponse(ctx, params)
 	if err != nil {
 		h.logger.ErrorContext(ctx, "Failed to build context", slog.Any("error", err),
 			slog.Int64("chat_id", event.ChatID),
@@ -114,7 +125,7 @@ func (h *Handlers) HandleMentionEvent(msg *message.Message) error {
 	}
 
 	// Send response
-	if err := h.sendResponse(ctx, event.ChatID, event.MessageID, response); err != nil {
+	if err := h.sendResponse(ctx, event.ChatID, event.TopicID, event.MessageID, response); err != nil {
 		h.logger.ErrorContext(ctx, "Failed to send response", slog.Any("error", err),
 			slog.Int64("chat_id", event.ChatID),
 			slog.Int64("user_id", event.UserID),
@@ -171,10 +182,44 @@ func (h *Handlers) extractUserQuery(text string) string {
 }
 
 // sendResponse sends response message to chat
-func (h *Handlers) sendResponse(ctx context.Context, chatID, replyToMessageID int64, response string) error {
+func (h *Handlers) sendResponse(ctx context.Context, chatID int64, topicID *int64, replyToMessageID int64, response string) error {
+	h.logger.InfoContext(ctx, "Sending response",
+		slog.Int64("chat_id", chatID),
+		slog.Any("topic_id", topicID),
+		slog.Int64("reply_to", replyToMessageID),
+	)
+
 	params := &telego.SendMessageParams{
 		ChatID: telego.ChatID{ID: chatID},
 		Text:   response,
+	}
+
+	// Set message thread ID for topic-based chats
+	if topicID != nil {
+		// Check if this chat has topic support
+		hasTopics, err := h.repo.IsChatTopicEnabled(ctx, chatID)
+		if err != nil {
+			h.logger.WarnContext(ctx, "Failed to check topic support, using topicID as-is",
+				slog.Any("error", err),
+				slog.Int64("chat_id", chatID),
+			)
+			hasTopics = true // Default to supporting topics if check fails
+		}
+
+		if hasTopics || *topicID > 0 {
+			// Chat supports topics OR this is a specific topic message
+			params.MessageThreadID = int(*topicID)
+			h.logger.InfoContext(ctx, "Setting MessageThreadID",
+				slog.Int("message_thread_id", params.MessageThreadID),
+				slog.Bool("chat_has_topics", hasTopics),
+				slog.String("reason", "topic_enabled_chat"),
+			)
+		} else {
+			h.logger.InfoContext(ctx, "Chat doesn't support topics, not setting MessageThreadID",
+				slog.Int64("chat_id", chatID),
+				slog.Bool("chat_has_topics", hasTopics),
+			)
+		}
 	}
 
 	if replyToMessageID > 0 {
@@ -184,5 +229,32 @@ func (h *Handlers) sendResponse(ctx context.Context, chatID, replyToMessageID in
 	}
 
 	_, err := h.bot.SendMessage(ctx, params)
+
+	// If topic message failed with "message thread not found", try sending to general chat
+	if err != nil && topicID != nil {
+		if strings.Contains(err.Error(), "message thread not found") {
+			h.logger.WarnContext(ctx, "Topic not found, falling back to general chat",
+				slog.Int64("chat_id", chatID),
+				slog.Any("topic_id", topicID),
+				slog.String("error", err.Error()),
+			)
+
+			// Retry without topic
+			fallbackParams := &telego.SendMessageParams{
+				ChatID: telego.ChatID{ID: chatID},
+				Text:   response,
+			}
+
+			if replyToMessageID > 0 {
+				fallbackParams.ReplyParameters = &telego.ReplyParameters{
+					MessageID: int(replyToMessageID),
+				}
+			}
+
+			_, fallbackErr := h.bot.SendMessage(ctx, fallbackParams)
+			return fallbackErr
+		}
+	}
+
 	return err
 }

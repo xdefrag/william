@@ -4,9 +4,10 @@
 APP_NAME=william
 BUILD_DIR=bin
 DOCKER_IMAGE=william-bot
-DB_URL ?= postgres://localhost/william?sslmode=disable
+DB_URL ?= postgres://william:william_password@localhost/william?sslmode=disable
 PROTO_SRC=proto
 PROTO_OUT=pkg
+MIGRATION_DIR=./internal/migrations/
 
 # Build the application
 build:
@@ -49,7 +50,7 @@ setup-proto:
 # Run the application
 run:
 	@echo "Running $(APP_NAME)..."
-	go run ./cmd/william
+	APP_CONFIG_PATH="config/app_test.toml" go run ./cmd/william
 
 # Run tests
 test:
@@ -95,20 +96,20 @@ dev:
 # Database migrations
 migrate-up:
 	@echo "Running migrations up..."
-	goose -dir migrations postgres "$(DB_URL)" up
+	goose -dir $(MIGRATION_DIR) postgres "$(DB_URL)" up
 
 migrate-down:
 	@echo "Running migrations down..."
-	goose -dir migrations postgres "$(DB_URL)" down
+	goose -dir $(MIGRATION_DIR) postgres "$(DB_URL)" down
 
 migrate-status:
 	@echo "Migration status..."
-	goose -dir migrations postgres "$(DB_URL)" status
+	goose -dir $(MIGRATION_DIR) postgres "$(DB_URL)" status
 
 migrate-create:
 	@echo "Creating new migration: $(name)"
 	@if [ -z "$(name)" ]; then echo "Usage: make migrate-create name=migration_name"; exit 1; fi
-	goose -dir migrations create $(name) sql
+	goose -dir $(MIGRATION_DIR) create $(name) sql
 
 # Docker operations
 docker-build:

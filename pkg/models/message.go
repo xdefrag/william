@@ -17,6 +17,7 @@ type Message struct {
 	TelegramMsgID int64     `json:"telegram_msg_id" db:"telegram_msg_id"`
 	ChatID        int64     `json:"chat_id" db:"chat_id"`
 	UserID        int64     `json:"user_id" db:"user_id"`
+	TopicID       *int64    `json:"topic_id" db:"topic_id"`
 	UserFirstName string    `json:"user_first_name" db:"user_first_name"`
 	UserLastName  *string   `json:"user_last_name" db:"user_last_name"`
 	Username      *string   `json:"username" db:"username"`
@@ -28,6 +29,7 @@ type Message struct {
 type ChatSummary struct {
 	ID             int64                  `json:"id" db:"id"`
 	ChatID         int64                  `json:"chat_id" db:"chat_id"`
+	TopicID        *int64                 `json:"topic_id" db:"topic_id"`
 	Summary        string                 `json:"summary" db:"summary"`
 	TopicsJSON     map[string]interface{} `json:"topics_json" db:"topics_json"`
 	NextEvents     *string                `json:"next_events" db:"next_events"`           // Legacy field for backward compatibility

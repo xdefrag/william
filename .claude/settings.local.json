@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(make migrate-create:*)",
+      "Bash(make migrate-up:*)",
+      "Bash(goose:*)",
+      "Bash(go build:*)",
+      "Bash(make migrate-status:*)",
+      "Bash(psql:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

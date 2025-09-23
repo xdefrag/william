@@ -8,6 +8,7 @@ import (
 // SummarizeEvent represents an event to trigger summarization
 type SummarizeEvent struct {
 	ChatID    int64     `json:"chat_id"`
+	TopicID   *int64    `json:"topic_id,omitempty"`
 	Timestamp time.Time `json:"timestamp"`
 }
 
@@ -26,6 +27,7 @@ func UnmarshalSummarizeEvent(data []byte) (SummarizeEvent, error) {
 // MentionEvent represents an event when bot is mentioned
 type MentionEvent struct {
 	ChatID    int64     `json:"chat_id"`
+	TopicID   *int64    `json:"topic_id,omitempty"`
 	UserID    int64     `json:"user_id"`
 	UserName  string    `json:"user_name"` // First name
 	Username  string    `json:"username"`  // @username (may be empty)
