@@ -79,7 +79,9 @@ func (s *HTTPServer) healthcheckHandler(w http.ResponseWriter, r *http.Request) 
 	w.WriteHeader(http.StatusOK)
 
 	response := `{"status":"ok","timestamp":"` + time.Now().UTC().Format(time.RFC3339) + `"}`
-	w.Write([]byte(response))
+	if _, err := w.Write([]byte(response)); err != nil {
+		s.logger.Error("Failed to write healthcheck response", slog.Any("error", err))
+	}
 
 	s.logger.Debug("Healthcheck endpoint accessed",
 		slog.String("remote_addr", r.RemoteAddr),

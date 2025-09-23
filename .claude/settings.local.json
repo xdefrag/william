@@ -6,7 +6,9 @@
       "Bash(goose:*)",
       "Bash(go build:*)",
       "Bash(make migrate-status:*)",
-      "Bash(psql:*)"
+      "Bash(psql:*)",
+      "Bash(make lint:*)",
+      "Bash(make test:*)"
     ],
     "deny": [],
     "ask": []
