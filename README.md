@@ -206,4 +206,4 @@ All dependencies are strictly controlled via `allowed-mods.txt`. See project rul
 
 ## License
 
-[Add your license here] 
+[LICENSE](./LICENSE)
