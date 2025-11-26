@@ -122,7 +122,7 @@ func (h *Handlers) HandleMentionEvent(msg *message.Message) error {
 	contextReq.BotName = h.config.App.App.Name
 
 	// Generate response
-	response, err := h.gptClient.GenerateResponse(ctx, *contextReq)
+	mentionResponse, err := h.gptClient.GenerateResponse(ctx, *contextReq)
 	if err != nil {
 		h.logger.ErrorContext(ctx, "Failed to generate response", slog.Any("error", err),
 			slog.Int64("chat_id", event.ChatID),
@@ -131,20 +131,46 @@ func (h *Handlers) HandleMentionEvent(msg *message.Message) error {
 		return fmt.Errorf("failed to generate response: %w", err)
 	}
 
-	// Send response
-	if err := h.sendResponse(ctx, event.ChatID, event.TopicID, event.MessageID, response); err != nil {
-		h.logger.ErrorContext(ctx, "Failed to send response", slog.Any("error", err),
-			slog.Int64("chat_id", event.ChatID),
-			slog.Int64("user_id", event.UserID),
-		)
-		return fmt.Errorf("failed to send response: %w", err)
+	h.logger.InfoContext(ctx, "GPT response received",
+		slog.Int64("chat_id", event.ChatID),
+		slog.Bool("should_reply", mentionResponse.ShouldReply),
+		slog.String("reaction", mentionResponse.Reaction),
+	)
+
+	// Set reaction if provided
+	if mentionResponse.Reaction != "" {
+		if err := h.setReaction(ctx, event.ChatID, event.MessageID, mentionResponse.Reaction); err != nil {
+			h.logger.WarnContext(ctx, "Failed to set reaction", slog.Any("error", err),
+				slog.Int64("chat_id", event.ChatID),
+				slog.Int64("message_id", event.MessageID),
+				slog.String("reaction", mentionResponse.Reaction),
+			)
+			// Don't return error, continue with response if needed
+		}
 	}
 
-	h.logger.InfoContext(ctx, "Response sent successfully",
-		slog.Int64("chat_id", event.ChatID),
-		slog.Int64("user_id", event.UserID),
-		slog.String("user_name", event.UserName),
-	)
+	// Send text response only if should_reply is true
+	if mentionResponse.ShouldReply && mentionResponse.Response != "" {
+		if err := h.sendResponse(ctx, event.ChatID, event.TopicID, event.MessageID, mentionResponse.Response); err != nil {
+			h.logger.ErrorContext(ctx, "Failed to send response", slog.Any("error", err),
+				slog.Int64("chat_id", event.ChatID),
+				slog.Int64("user_id", event.UserID),
+			)
+			return fmt.Errorf("failed to send response: %w", err)
+		}
+
+		h.logger.InfoContext(ctx, "Response sent successfully",
+			slog.Int64("chat_id", event.ChatID),
+			slog.Int64("user_id", event.UserID),
+			slog.String("user_name", event.UserName),
+		)
+	} else {
+		h.logger.InfoContext(ctx, "No text response needed",
+			slog.Int64("chat_id", event.ChatID),
+			slog.Int64("user_id", event.UserID),
+			slog.Bool("should_reply", mentionResponse.ShouldReply),
+		)
+	}
 
 	return nil
 }
@@ -312,4 +338,18 @@ func (h *Handlers) saveBotMessage(ctx context.Context, sentMessage *telego.Messa
 	}
 
 	return h.repo.SaveMessage(ctx, botMessage)
+}
+
+// setReaction sets an emoji reaction on a message
+func (h *Handlers) setReaction(ctx context.Context, chatID int64, messageID int64, emoji string) error {
+	return h.bot.SetMessageReaction(ctx, &telego.SetMessageReactionParams{
+		ChatID:    telego.ChatID{ID: chatID},
+		MessageID: int(messageID),
+		Reaction: []telego.ReactionType{
+			&telego.ReactionTypeEmoji{
+				Type:  "emoji",
+				Emoji: emoji,
+			},
+		},
+	})
 }

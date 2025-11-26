@@ -76,6 +76,13 @@ type ContextRequest struct {
 	BotName          string  // Bot name from config
 }
 
+// MentionResponse represents structured response for mention handling
+type MentionResponse struct {
+	ShouldReply bool   `json:"should_reply"`          // Whether to send a text response
+	Response    string `json:"response,omitempty"`    // Text response (if should_reply is true)
+	Reaction    string `json:"reaction,omitempty"`    // Emoji reaction to set (optional)
+}
+
 // Summarize generates summaries for chat and users
 func (c *Client) Summarize(ctx context.Context, req SummarizeRequest) (*SummarizeResponse, error) {
 	// Build messages content with user identification
@@ -201,7 +208,7 @@ func (c *Client) Summarize(ctx context.Context, req SummarizeRequest) (*Summariz
 }
 
 // GenerateResponse creates context-aware response for user query
-func (c *Client) GenerateResponse(ctx context.Context, req ContextRequest) (string, error) {
+func (c *Client) GenerateResponse(ctx context.Context, req ContextRequest) (*MentionResponse, error) {
 	// Build system prompt
 	systemPrompt := c.config.App.Prompts.ResponseSystem
 
@@ -313,12 +320,19 @@ func (c *Client) GenerateResponse(ctx context.Context, req ContextRequest) (stri
 		Temperature: openai.Float(c.config.App.OpenAI.Temperature),
 	})
 	if err != nil {
-		return "", fmt.Errorf("failed to call OpenAI: %w", err)
+		return nil, fmt.Errorf("failed to call OpenAI: %w", err)
 	}
 
 	if len(resp.Choices) == 0 {
-		return "", fmt.Errorf("no response from OpenAI")
+		return nil, fmt.Errorf("no response from OpenAI")
 	}
 
-	return resp.Choices[0].Message.Content, nil
+	content := resp.Choices[0].Message.Content
+
+	var result MentionResponse
+	if err := json.Unmarshal([]byte(content), &result); err != nil {
+		return nil, fmt.Errorf("failed to parse response JSON: %w", err)
+	}
+
+	return &result, nil
 }

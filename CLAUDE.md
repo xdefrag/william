@@ -140,6 +140,13 @@ The `williamc` CLI provides admin functionality:
 
 ## Development Guidelines
 
+### Documentation Lookup
+When searching for documentation on external libraries, APIs, or modules (e.g., Telego, pgx, Watermill, OpenAI SDK, etc.), always use the MCP context7 tools:
+1. First call `mcp__context7__resolve-library-id` to find the library ID
+2. Then call `mcp__context7__get-library-docs` to fetch up-to-date documentation
+
+This ensures you're working with current documentation rather than potentially outdated training data.
+
 ### Dependencies
 - All dependencies must be listed in `allowed-mods.txt`
 - Run `make check-imports` to verify compliance
