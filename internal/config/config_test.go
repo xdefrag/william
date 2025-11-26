@@ -10,14 +10,12 @@ func TestLoad(t *testing.T) {
 	_ = os.Setenv("TG_BOT_TOKEN", "test_token")
 	_ = os.Setenv("OPENAI_API_KEY", "test_api_key")
 	_ = os.Setenv("PG_DSN", "test_dsn")
-	_ = os.Setenv("JWT_SECRET", "test_jwt_secret")
 	_ = os.Setenv("APP_CONFIG_PATH", "../../config/app.toml")
 
 	defer func() {
 		_ = os.Unsetenv("TG_BOT_TOKEN")
 		_ = os.Unsetenv("OPENAI_API_KEY")
 		_ = os.Unsetenv("PG_DSN")
-		_ = os.Unsetenv("JWT_SECRET")
 		_ = os.Unsetenv("APP_CONFIG_PATH")
 	}()
 
@@ -35,9 +33,6 @@ func TestLoad(t *testing.T) {
 	}
 	if cfg.PostgresDSN != "test_dsn" {
 		t.Errorf("Expected PostgresDSN to be 'test_dsn', got %s", cfg.PostgresDSN)
-	}
-	if cfg.JWTSecret != "test_jwt_secret" {
-		t.Errorf("Expected JWTSecret to be 'test_jwt_secret', got %s", cfg.JWTSecret)
 	}
 
 	// Test TOML loaded values
@@ -81,7 +76,6 @@ func TestLoadWithEnvOverrides(t *testing.T) {
 	_ = os.Setenv("TG_BOT_TOKEN", "test_token")
 	_ = os.Setenv("OPENAI_API_KEY", "test_api_key")
 	_ = os.Setenv("PG_DSN", "test_dsn")
-	_ = os.Setenv("JWT_SECRET", "test_jwt_secret")
 	_ = os.Setenv("APP_CONFIG_PATH", "../../config/app.toml")
 	_ = os.Setenv("OPENAI_MODEL", "gpt-4")
 	_ = os.Setenv("MAX_MSG_BUFFER", "200")
@@ -92,7 +86,6 @@ func TestLoadWithEnvOverrides(t *testing.T) {
 		_ = os.Unsetenv("TG_BOT_TOKEN")
 		_ = os.Unsetenv("OPENAI_API_KEY")
 		_ = os.Unsetenv("PG_DSN")
-		_ = os.Unsetenv("JWT_SECRET")
 		_ = os.Unsetenv("APP_CONFIG_PATH")
 		_ = os.Unsetenv("OPENAI_MODEL")
 		_ = os.Unsetenv("MAX_MSG_BUFFER")

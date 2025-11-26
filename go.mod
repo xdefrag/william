@@ -4,7 +4,6 @@ go 1.24.5
 
 require (
 	github.com/ThreeDotsLabs/watermill v1.4.7
-	github.com/golang-jwt/jwt/v5 v5.2.3
 	github.com/jackc/pgx/v5 v5.7.4
 	github.com/joho/godotenv v1.5.1
 	github.com/mymmrac/telego v1.2.0
@@ -12,9 +11,6 @@ require (
 	github.com/pelletier/go-toml/v2 v2.2.4
 	github.com/pressly/goose/v3 v3.22.1
 	github.com/samber/do v1.6.0
-	github.com/urfave/cli/v2 v2.27.7
-	google.golang.org/grpc v1.74.2
-	google.golang.org/protobuf v1.36.6
 )
 
 require (
@@ -22,7 +18,6 @@ require (
 	github.com/bytedance/sonic v1.13.3 // indirect
 	github.com/bytedance/sonic/loader v0.2.4 // indirect
 	github.com/cloudwego/base64x v0.1.5 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grbit/go-json v0.11.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
@@ -34,7 +29,6 @@ require (
 	github.com/mfridman/interpolate v0.0.2 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sethvargo/go-retry v0.3.0 // indirect
 	github.com/tidwall/gjson v1.14.4 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
@@ -44,13 +38,9 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.64.0 // indirect
 	github.com/valyala/fastjson v1.6.4 // indirect
-	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.0.0-20210923205945-b76863e36670 // indirect
 	golang.org/x/crypto v0.40.0 // indirect
-	golang.org/x/net v0.42.0 // indirect
 	golang.org/x/sync v0.16.0 // indirect
-	golang.org/x/sys v0.34.0 // indirect
 	golang.org/x/text v0.27.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250728155136-f173205681a0 // indirect
 )

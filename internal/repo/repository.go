@@ -390,30 +390,15 @@ func (r *Repository) GetActiveChatIDs(ctx context.Context, since time.Time) ([]i
 
 // IsAllowedChat checks if the given chat ID is in the allowed chats list
 func (r *Repository) IsAllowedChat(ctx context.Context, chatID int64) (bool, error) {
-	// Normalize chat ID by removing Telegram prefixes
-	normalizedChatID := normalizeChatID(chatID)
-
 	query := `SELECT EXISTS(SELECT 1 FROM allowed_chats WHERE chat_id = $1)`
 
 	var exists bool
-	err := r.pool.QueryRow(ctx, query, normalizedChatID).Scan(&exists)
+	err := r.pool.QueryRow(ctx, query, chatID).Scan(&exists)
 	if err != nil {
 		return false, fmt.Errorf("failed to check allowed chat: %w", err)
 	}
 
 	return exists, nil
-}
-
-// normalizeChatID removes Telegram chat ID prefixes (-100 for supergroups)
-func normalizeChatID(chatID int64) int64 {
-	if chatID < 0 {
-		absID := -chatID
-		// If starts with 100, remove it (supergroup prefix: -100xxxxxxxxx -> -xxxxxxxxx)
-		if absID >= 1000000000000 { // -100xxxxxxxxx format
-			return -(absID - 1000000000000)
-		}
-	}
-	return chatID
 }
 
 // GetAllowedChats returns all allowed chat IDs

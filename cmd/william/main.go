@@ -23,7 +23,6 @@ import (
 	"github.com/xdefrag/william/internal/config"
 	williamcontext "github.com/xdefrag/william/internal/context"
 	"github.com/xdefrag/william/internal/gpt"
-	grpcserver "github.com/xdefrag/william/internal/grpc"
 	"github.com/xdefrag/william/internal/migrations"
 	"github.com/xdefrag/william/internal/repo"
 	"github.com/xdefrag/william/internal/scheduler"
@@ -69,8 +68,6 @@ func main() {
 	listener := do.MustInvoke[*bot.Listener](injector)
 	handlers := do.MustInvoke[*bot.Handlers](injector)
 	sched := do.MustInvoke[*scheduler.Scheduler](injector)
-	grpcSrv := do.MustInvoke[*grpcserver.Server](injector)
-	httpSrv := do.MustInvoke[*grpcserver.HTTPServer](injector)
 
 	// Initialize message router for event handling
 	eventRouter, err := message.NewRouter(message.RouterConfig{}, logger)
@@ -111,30 +108,10 @@ func main() {
 		}
 	}()
 
-	// Start gRPC server
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		if err := grpcSrv.Start(ctx); err != nil {
-			logger.Error("gRPC server stopped with error", err, nil)
-		}
-	}()
-
-	// Start HTTP healthcheck server (after all other services)
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		if err := httpSrv.Start(ctx); err != nil {
-			logger.Error("HTTP server stopped with error", err, nil)
-		}
-	}()
-
 	logger.Info("William bot started successfully", watermill.LogFields{
 		"config_loaded": true,
 		"db_connected":  true,
 		"bot_ready":     true,
-		"grpc_address":  grpcSrv.GetAddress(),
-		"http_address":  httpSrv.GetAddress(),
 	})
 
 	// Wait for interrupt signal
@@ -340,23 +317,6 @@ func setupDependencies(injector *do.Injector, cfg *config.Config, logger watermi
 		logger := do.MustInvoke[*slog.Logger](i)
 
 		return scheduler.New(publisher, listener, config, logger), nil
-	})
-
-	// Register gRPC server
-	do.Provide(injector, func(i *do.Injector) (*grpcserver.Server, error) {
-		config := do.MustInvoke[*config.Config](i)
-		repository := do.MustInvoke[*repo.Repository](i)
-		publisher := do.MustInvoke[message.Publisher](i)
-		logger := do.MustInvoke[*slog.Logger](i)
-
-		return grpcserver.New(config, repository, publisher, logger)
-	})
-
-	// Register HTTP healthcheck server
-	do.Provide(injector, func(i *do.Injector) (*grpcserver.HTTPServer, error) {
-		config := do.MustInvoke[*config.Config](i)
-		logger := do.MustInvoke[*slog.Logger](i)
-		return grpcserver.NewHTTPServer(config, logger), nil
 	})
 
 	return nil

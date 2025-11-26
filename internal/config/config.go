@@ -38,11 +38,6 @@ type AppConfig struct {
 		Timezone             string `toml:"timezone"`
 	} `toml:"scheduler"`
 
-	GRPC struct {
-		Port     int `toml:"port"`
-		HTTPPort int `toml:"http_port"`
-	} `toml:"grpc"`
-
 	Prompts struct {
 		SummarizeSystem string `toml:"summarize_system"`
 		ResponseSystem  string `toml:"response_system"`
@@ -55,8 +50,6 @@ type Config struct {
 	TelegramBotToken string
 	OpenAIAPIKey     string
 	PostgresDSN      string
-	JWTSecret        string
-	AdminUserID      int64
 
 	// Application settings from TOML
 	App AppConfig
@@ -76,20 +69,10 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("failed to load app config: %w", err)
 	}
 
-	// Parse admin user ID
-	var adminUserID int64
-	if adminUserIDStr := os.Getenv("ADMIN_USER_ID"); adminUserIDStr != "" {
-		if id, err := strconv.ParseInt(adminUserIDStr, 10, 64); err == nil {
-			adminUserID = id
-		}
-	}
-
 	cfg := &Config{
 		TelegramBotToken: os.Getenv("TG_BOT_TOKEN"),
 		OpenAIAPIKey:     os.Getenv("OPENAI_API_KEY"),
 		PostgresDSN:      os.Getenv("PG_DSN"),
-		JWTSecret:        os.Getenv("JWT_SECRET"),
-		AdminUserID:      adminUserID,
 		App:              *appCfg,
 	}
 
@@ -123,9 +106,6 @@ func Load() (*Config, error) {
 	}
 	if cfg.PostgresDSN == "" {
 		return nil, fmt.Errorf("PG_DSN is required")
-	}
-	if cfg.JWTSecret == "" {
-		return nil, fmt.Errorf("JWT_SECRET is required")
 	}
 
 	// Parse timezone
