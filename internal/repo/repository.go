@@ -718,6 +718,58 @@ func (r *Repository) RemoveUserRole(ctx context.Context, userID, chatID int64) e
 	return nil
 }
 
+// UserMessageStats represents user activity statistics
+type UserMessageStats struct {
+	UserID       int64
+	Username     *string
+	FirstName    string
+	LastName     *string
+	MessageCount int
+}
+
+// GetUserMessageStats returns message count statistics for users in a chat
+func (r *Repository) GetUserMessageStats(ctx context.Context, chatID int64, limit int, ascending bool) ([]*UserMessageStats, error) {
+	order := "DESC"
+	if ascending {
+		order = "ASC"
+	}
+
+	query := fmt.Sprintf(`
+		SELECT
+			user_id,
+			MAX(username) as username,
+			MAX(user_first_name) as first_name,
+			MAX(user_last_name) as last_name,
+			COUNT(*) as message_count
+		FROM messages
+		WHERE chat_id = $1 AND is_bot = false
+		GROUP BY user_id
+		ORDER BY message_count %s
+		LIMIT $2`, order)
+
+	rows, err := r.pool.Query(ctx, query, chatID, limit)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query user message stats: %w", err)
+	}
+	defer rows.Close()
+
+	var stats []*UserMessageStats
+	for rows.Next() {
+		s := &UserMessageStats{}
+		err := rows.Scan(&s.UserID, &s.Username, &s.FirstName, &s.LastName, &s.MessageCount)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan user message stats: %w", err)
+		}
+		stats = append(stats, s)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating user message stats: %w", err)
+	}
+
+	return stats, nil
+}
+
 // GetUserChats retrieves all chat IDs where the user has any role
 func (r *Repository) GetUserChats(ctx context.Context, userID int64) ([]int64, error) {
 	query := `

@@ -107,6 +107,15 @@ func (l *Listener) handleMessage(ctx context.Context, msg *telego.Message) {
 		return
 	}
 
+	// Check if message is a command and handle it
+	if l.handleCommand(ctx, msg) {
+		l.logger.DebugContext(ctx, "Message handled as command",
+			slog.Int64("chat_id", msg.Chat.ID),
+			slog.Int64("user_id", msg.From.ID),
+		)
+		return
+	}
+
 	// Create message model
 	var lastName *string
 	if msg.From.LastName != "" {
