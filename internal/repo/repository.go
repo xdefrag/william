@@ -712,6 +712,24 @@ type UserMessageStats struct {
 	MessageCount int
 }
 
+// UserCharStats represents user statistics by character count
+type UserCharStats struct {
+	UserID    int64
+	Username  *string
+	FirstName string
+	LastName  *string
+	CharCount int64
+}
+
+// UserLastMessageStats represents user statistics by last message time
+type UserLastMessageStats struct {
+	UserID        int64
+	Username      *string
+	FirstName     string
+	LastName      *string
+	LastMessageAt time.Time
+}
+
 // GetUserMessageStats returns message count statistics for users in a chat
 func (r *Repository) GetUserMessageStats(ctx context.Context, chatID int64, limit int, ascending bool) ([]*UserMessageStats, error) {
 	order := "DESC"
@@ -750,6 +768,92 @@ func (r *Repository) GetUserMessageStats(ctx context.Context, chatID int64, limi
 
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("error iterating user message stats: %w", err)
+	}
+
+	return stats, nil
+}
+
+// GetUserCharStats returns character count statistics for users in a chat
+func (r *Repository) GetUserCharStats(ctx context.Context, chatID int64, limit int, ascending bool) ([]*UserCharStats, error) {
+	order := "DESC"
+	if ascending {
+		order = "ASC"
+	}
+
+	query := fmt.Sprintf(`
+		SELECT
+			user_id,
+			MAX(username) as username,
+			MAX(user_first_name) as first_name,
+			MAX(user_last_name) as last_name,
+			COALESCE(SUM(LENGTH(text)), 0) as char_count
+		FROM messages
+		WHERE chat_id = $1 AND is_bot = false
+		GROUP BY user_id
+		ORDER BY char_count %s
+		LIMIT $2`, order)
+
+	rows, err := r.pool.Query(ctx, query, chatID, limit)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query user char stats: %w", err)
+	}
+	defer rows.Close()
+
+	var stats []*UserCharStats
+	for rows.Next() {
+		s := &UserCharStats{}
+		err := rows.Scan(&s.UserID, &s.Username, &s.FirstName, &s.LastName, &s.CharCount)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan user char stats: %w", err)
+		}
+		stats = append(stats, s)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating user char stats: %w", err)
+	}
+
+	return stats, nil
+}
+
+// GetUserLastMessageStats returns last message time statistics for users in a chat
+func (r *Repository) GetUserLastMessageStats(ctx context.Context, chatID int64, limit int, ascending bool) ([]*UserLastMessageStats, error) {
+	order := "DESC"
+	if ascending {
+		order = "ASC"
+	}
+
+	query := fmt.Sprintf(`
+		SELECT
+			user_id,
+			MAX(username) as username,
+			MAX(user_first_name) as first_name,
+			MAX(user_last_name) as last_name,
+			MAX(created_at) as last_message_at
+		FROM messages
+		WHERE chat_id = $1 AND is_bot = false
+		GROUP BY user_id
+		ORDER BY last_message_at %s
+		LIMIT $2`, order)
+
+	rows, err := r.pool.Query(ctx, query, chatID, limit)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query user last message stats: %w", err)
+	}
+	defer rows.Close()
+
+	var stats []*UserLastMessageStats
+	for rows.Next() {
+		s := &UserLastMessageStats{}
+		err := rows.Scan(&s.UserID, &s.Username, &s.FirstName, &s.LastName, &s.LastMessageAt)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan user last message stats: %w", err)
+		}
+		stats = append(stats, s)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating user last message stats: %w", err)
 	}
 
 	return stats, nil
