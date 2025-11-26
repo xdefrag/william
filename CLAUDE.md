@@ -23,15 +23,21 @@ make dev            # Hot reload development mode (requires air)
 make run            # Run main application
 
 # Testing & Quality
-make test           # Run tests
-make test-coverage  # Run tests with coverage report
-make lint           # Run golangci-lint
-make check          # Run lint + test + build pipeline
+make test                    # Run all tests
+go test -v ./internal/config # Run single package tests
+go test -v -run TestLoad ./internal/config  # Run single test
+make test-coverage           # Run tests with coverage report
+make lint                    # Run golangci-lint
+make check                   # Run lint + test + build pipeline
 
 # Database Operations
 make migrate-up     # Apply migrations
 make migrate-create name=feature_name  # Create new migration
 make migrate-status # Check migration status
+
+# Protobuf (if modifying gRPC API)
+make setup-proto    # Install protoc tools
+make proto-gen      # Regenerate protobuf code
 ```
 
 ### Docker Development (Recommended)
@@ -62,6 +68,14 @@ make docker-compose-clean   # Complete cleanup
 2. **Auto-Summarization**: N messages trigger → `summarizer.go` → GPT → Summary stored
 3. **Mention Responses**: @mention → `builder.go` → Context + GPT → Response
 4. **Midnight Processing**: Cron → Summarize all active chats → Reset counters
+
+### Event-Driven Architecture
+The bot uses Watermill pub/sub for internal event handling. Key topics:
+- `summarize`: Triggers chat/topic summarization
+- `mention`: Handles @mention and reply-to-bot events
+- `midnight`: Triggers daily summarization of all active chats
+
+Events flow: Listener → Publisher → Router → Handlers (`internal/bot/handlers.go`)
 
 ### Key Technologies
 - **Language**: Go 1.24+
@@ -131,26 +145,8 @@ The `williamc` CLI provides admin functionality:
 - Run `make check-imports` to verify compliance
 - Use `make check` before committing to run full validation pipeline
 
-### Code Quality
-- Always run `make lint` before committing
-- Use `make test-coverage` to ensure adequate test coverage
-- Follow existing patterns for dependency injection using samber/do
-
-### Hot Reload Development
-- Use `make dev` for automatic rebuilds (requires `air` tool)
-- Config file `config/app.toml` changes require restart
-- Database schema changes require migration + restart
-
-## Production Deployment
-
-### Docker Compose
-- Use provided `docker-compose.yml` for production deployment
-- Configure environment variables via `.env` file
-- Run migrations with `docker-compose run --rm migrate`
-- Monitor logs with `docker-compose logs -f william`
-
-### Security
-- Use strong JWT secrets (minimum 32 characters)
-- Rotate JWT secrets periodically
-- Monitor authentication logs for suspicious activity
-- Keep OpenAI API keys and bot tokens secure
+### Dependency Injection
+Services are wired using samber/do in `cmd/william/main.go:setupDependencies()`. To add a new service:
+1. Create service in `internal/<package>/`
+2. Register provider in `setupDependencies()`
+3. Invoke with `do.MustInvoke[*YourService](injector)`
