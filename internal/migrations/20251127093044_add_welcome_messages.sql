@@ -6,12 +6,11 @@ CREATE TABLE welcome_messages (
   message    TEXT NOT NULL,
   enabled    BOOLEAN DEFAULT true,
   created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(chat_id, COALESCE(topic_id, 0))
+  updated_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX idx_welcome_messages_chat_topic ON welcome_messages(chat_id, topic_id);
+CREATE UNIQUE INDEX idx_welcome_messages_chat_topic_unique ON welcome_messages(chat_id, COALESCE(topic_id, 0));
 
 -- +goose Down
-DROP INDEX IF EXISTS idx_welcome_messages_chat_topic;
+DROP INDEX IF EXISTS idx_welcome_messages_chat_topic_unique;
 DROP TABLE IF EXISTS welcome_messages;
