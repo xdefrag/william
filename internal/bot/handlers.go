@@ -417,12 +417,15 @@ func (h *Handlers) formatWelcomeMessage(template string, event WelcomeEvent) str
 	// Replace {last_name} placeholder
 	result = strings.ReplaceAll(result, "{last_name}", event.LastName)
 
-	// Replace {username} placeholder (with @ prefix if exists)
+	// Replace {username} placeholder - always create a clickable mention
+	var mention string
 	if event.Username != "" {
-		result = strings.ReplaceAll(result, "{username}", "@"+event.Username)
+		mention = "@" + event.Username
 	} else {
-		result = strings.ReplaceAll(result, "{username}", event.FirstName)
+		// Use tg://user?id= link for users without username
+		mention = fmt.Sprintf(`<a href="tg://user?id=%d">%s</a>`, event.UserID, event.FirstName)
 	}
+	result = strings.ReplaceAll(result, "{username}", mention)
 
 	// Replace {full_name} placeholder
 	fullName := event.FirstName
