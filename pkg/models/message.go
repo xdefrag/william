@@ -74,3 +74,14 @@ type AllowedChat struct {
 	Name      *string   `json:"name" db:"name"`
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 }
+
+// WelcomeMessage represents a welcome message for new chat members
+type WelcomeMessage struct {
+	ID        int64     `json:"id" db:"id"`
+	ChatID    int64     `json:"chat_id" db:"chat_id"`
+	TopicID   *int64    `json:"topic_id" db:"topic_id"`
+	Message   string    `json:"message" db:"message"`
+	Enabled   bool      `json:"enabled" db:"enabled"`
+	CreatedAt time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
+}

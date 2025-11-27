@@ -82,6 +82,12 @@ func (l *Listener) getTopicID(msg *telego.Message) *int64 {
 
 // handleMessage processes incoming message
 func (l *Listener) handleMessage(ctx context.Context, msg *telego.Message) {
+	// Check for new chat members first (before text check)
+	if len(msg.NewChatMembers) > 0 {
+		l.handleNewMembers(ctx, msg)
+		return
+	}
+
 	// Get text from either Text or Caption field
 	messageText := l.getMessageText(msg)
 
@@ -334,4 +340,66 @@ func (l *Listener) ResetCountersForAllChats() {
 	}
 
 	l.logger.InfoContext(ctx, "Reset message counters for all chats")
+}
+
+// handleNewMembers processes new chat member events
+func (l *Listener) handleNewMembers(ctx context.Context, msg *telego.Message) {
+	// Check if chat is allowed
+	isAllowed, err := l.repo.IsAllowedChat(ctx, msg.Chat.ID)
+	if err != nil {
+		l.logger.ErrorContext(ctx, "Failed to check allowed chat for new members", slog.Any("error", err),
+			slog.Int64("chat_id", msg.Chat.ID),
+		)
+		return
+	}
+
+	if !isAllowed {
+		l.logger.DebugContext(ctx, "New member event from non-allowed chat ignored",
+			slog.Int64("chat_id", msg.Chat.ID),
+		)
+		return
+	}
+
+	// Process each new member
+	for _, member := range msg.NewChatMembers {
+		// Skip bots
+		if member.IsBot {
+			continue
+		}
+
+		l.logger.InfoContext(ctx, "New chat member detected",
+			slog.Int64("chat_id", msg.Chat.ID),
+			slog.Int64("user_id", member.ID),
+			slog.String("first_name", member.FirstName),
+		)
+
+		// Publish welcome event
+		if err := l.publishWelcomeEvent(ctx, msg, &member); err != nil {
+			l.logger.ErrorContext(ctx, "Failed to publish welcome event", slog.Any("error", err),
+				slog.Int64("chat_id", msg.Chat.ID),
+				slog.Int64("user_id", member.ID),
+			)
+		}
+	}
+}
+
+// publishWelcomeEvent publishes event to welcome new member
+func (l *Listener) publishWelcomeEvent(ctx context.Context, msg *telego.Message, member *telego.User) error {
+	event := WelcomeEvent{
+		ChatID:    msg.Chat.ID,
+		TopicID:   l.getTopicID(msg),
+		UserID:    member.ID,
+		FirstName: member.FirstName,
+		LastName:  member.LastName,
+		Username:  member.Username,
+		Timestamp: time.Now(),
+	}
+
+	msgData, err := event.Marshal()
+	if err != nil {
+		return fmt.Errorf("failed to marshal welcome event: %w", err)
+	}
+
+	msgWatermill := message.NewMessage(watermill.NewUUID(), msgData)
+	return l.publisher.Publish("welcome", msgWatermill)
 }

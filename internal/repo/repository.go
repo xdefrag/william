@@ -890,3 +890,37 @@ func (r *Repository) GetUserChats(ctx context.Context, userID int64) ([]int64, e
 
 	return chatIDs, nil
 }
+
+// Welcome messages operations
+
+// ErrWelcomeMessageNotFound indicates no welcome message is configured for the chat
+var ErrWelcomeMessageNotFound = fmt.Errorf("welcome message not found")
+
+// GetWelcomeMessage retrieves the welcome message for a chat/topic if enabled
+func (r *Repository) GetWelcomeMessage(ctx context.Context, chatID int64, topicID *int64) (*models.WelcomeMessage, error) {
+	query := `
+		SELECT id, chat_id, topic_id, message, enabled, created_at, updated_at
+		FROM welcome_messages
+		WHERE chat_id = $1 AND COALESCE(topic_id, 0) = COALESCE($2, 0) AND enabled = true
+	`
+
+	var wm models.WelcomeMessage
+	err := r.pool.QueryRow(ctx, query, chatID, topicID).Scan(
+		&wm.ID,
+		&wm.ChatID,
+		&wm.TopicID,
+		&wm.Message,
+		&wm.Enabled,
+		&wm.CreatedAt,
+		&wm.UpdatedAt,
+	)
+
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, ErrWelcomeMessageNotFound
+		}
+		return nil, fmt.Errorf("failed to get welcome message: %w", err)
+	}
+
+	return &wm, nil
+}

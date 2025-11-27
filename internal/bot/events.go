@@ -69,3 +69,26 @@ func UnmarshalMidnightEvent(data []byte) (MidnightEvent, error) {
 	err := json.Unmarshal(data, &event)
 	return event, err
 }
+
+// WelcomeEvent represents an event when new members join a chat
+type WelcomeEvent struct {
+	ChatID    int64     `json:"chat_id"`
+	TopicID   *int64    `json:"topic_id,omitempty"`
+	UserID    int64     `json:"user_id"`
+	FirstName string    `json:"first_name"`
+	LastName  string    `json:"last_name,omitempty"`
+	Username  string    `json:"username,omitempty"`
+	Timestamp time.Time `json:"timestamp"`
+}
+
+// Marshal serializes the event to JSON
+func (e WelcomeEvent) Marshal() ([]byte, error) {
+	return json.Marshal(e)
+}
+
+// UnmarshalWelcomeEvent deserializes JSON to WelcomeEvent
+func UnmarshalWelcomeEvent(data []byte) (WelcomeEvent, error) {
+	var event WelcomeEvent
+	err := json.Unmarshal(data, &event)
+	return event, err
+}

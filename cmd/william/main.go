@@ -363,7 +363,20 @@ func setupEventSubscribers(router *message.Router, subscriber message.Subscriber
 		},
 	)
 
+	// Subscribe to welcome events
+	router.AddHandler(
+		"welcome_handler",
+		"welcome",
+		subscriber,
+		"welcome",
+		publisher,
+		func(msg *message.Message) ([]*message.Message, error) {
+			err := handlers.HandleWelcomeEvent(msg)
+			return nil, err
+		},
+	)
+
 	logger.Info("Event subscribers configured", watermill.LogFields{
-		"handlers": []string{"summarize", "mention", "midnight"},
+		"handlers": []string{"summarize", "mention", "midnight", "welcome"},
 	})
 }

@@ -2,6 +2,7 @@ package bot
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -352,4 +353,100 @@ func (h *Handlers) setReaction(ctx context.Context, chatID int64, messageID int6
 			},
 		},
 	})
+}
+
+// HandleWelcomeEvent handles welcome events for new chat members
+func (h *Handlers) HandleWelcomeEvent(msg *message.Message) error {
+	ctx := context.Background()
+
+	event, err := UnmarshalWelcomeEvent(msg.Payload)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal welcome event: %w", err)
+	}
+
+	h.logger.InfoContext(ctx, "Processing welcome event",
+		slog.Int64("chat_id", event.ChatID),
+		slog.Int64("user_id", event.UserID),
+		slog.String("first_name", event.FirstName),
+	)
+
+	// Get welcome message for this chat/topic
+	welcomeMsg, err := h.repo.GetWelcomeMessage(ctx, event.ChatID, event.TopicID)
+	if err != nil {
+		if errors.Is(err, repo.ErrWelcomeMessageNotFound) {
+			h.logger.DebugContext(ctx, "No welcome message configured for chat",
+				slog.Int64("chat_id", event.ChatID),
+				slog.Any("topic_id", event.TopicID),
+			)
+			return nil
+		}
+		h.logger.ErrorContext(ctx, "Failed to get welcome message", slog.Any("error", err),
+			slog.Int64("chat_id", event.ChatID),
+		)
+		return fmt.Errorf("failed to get welcome message: %w", err)
+	}
+
+	// Format welcome message with user info
+	formattedMessage := h.formatWelcomeMessage(welcomeMsg.Message, event)
+
+	// Send welcome message
+	if err := h.sendWelcomeMessage(ctx, event.ChatID, event.TopicID, formattedMessage); err != nil {
+		h.logger.ErrorContext(ctx, "Failed to send welcome message", slog.Any("error", err),
+			slog.Int64("chat_id", event.ChatID),
+			slog.Int64("user_id", event.UserID),
+		)
+		return fmt.Errorf("failed to send welcome message: %w", err)
+	}
+
+	h.logger.InfoContext(ctx, "Welcome message sent successfully",
+		slog.Int64("chat_id", event.ChatID),
+		slog.Int64("user_id", event.UserID),
+		slog.String("first_name", event.FirstName),
+	)
+
+	return nil
+}
+
+// formatWelcomeMessage replaces placeholders in welcome message template
+func (h *Handlers) formatWelcomeMessage(template string, event WelcomeEvent) string {
+	result := template
+
+	// Replace {first_name} placeholder
+	result = strings.ReplaceAll(result, "{first_name}", event.FirstName)
+
+	// Replace {last_name} placeholder
+	result = strings.ReplaceAll(result, "{last_name}", event.LastName)
+
+	// Replace {username} placeholder (with @ prefix if exists)
+	if event.Username != "" {
+		result = strings.ReplaceAll(result, "{username}", "@"+event.Username)
+	} else {
+		result = strings.ReplaceAll(result, "{username}", event.FirstName)
+	}
+
+	// Replace {full_name} placeholder
+	fullName := event.FirstName
+	if event.LastName != "" {
+		fullName += " " + event.LastName
+	}
+	result = strings.ReplaceAll(result, "{full_name}", fullName)
+
+	return result
+}
+
+// sendWelcomeMessage sends welcome message to chat
+func (h *Handlers) sendWelcomeMessage(ctx context.Context, chatID int64, topicID *int64, text string) error {
+	params := &telego.SendMessageParams{
+		ChatID:    telego.ChatID{ID: chatID},
+		Text:      text,
+		ParseMode: telego.ModeHTML,
+	}
+
+	// Set message thread ID for topic-based chats
+	if topicID != nil && *topicID > 0 {
+		params.MessageThreadID = int(*topicID)
+	}
+
+	_, err := h.bot.SendMessage(ctx, params)
+	return err
 }
